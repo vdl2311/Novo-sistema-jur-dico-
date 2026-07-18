@@ -1,6 +1,4 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
-  getFirestore, 
   doc, 
   getDoc, 
   getDocs, 
@@ -14,24 +12,10 @@ import {
   limit as fsLimit,
   Timestamp
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { firestore } from './firebase-init';
+import { FirebaseService } from './firebase-service';
 
-const config = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || firebaseConfig?.apiKey,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || firebaseConfig?.authDomain,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || firebaseConfig?.projectId || 'pro-bolso',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || firebaseConfig?.storageBucket,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig?.messagingSenderId,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || firebaseConfig?.appId,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || firebaseConfig?.measurementId,
-};
-
-const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || firebaseConfig?.firestoreDatabaseId;
-
-const app = getApps().length === 0 ? initializeApp(config) : getApp();
-
-// Inicializa o Firestore com suporte opcional a custom database ID
-export const firestore = getFirestore(app, databaseId);
+export { firestore };
 
 // Converte Timestamps do Firestore para instâncias de Date do Javascript
 function convertTimestampsToDates(obj: any): any {
@@ -401,48 +385,20 @@ function createModelProxy(modelName: string) {
     },
 
     async create(args: any) {
-      console.log(`[Firestore DB ${modelName}:create] Start write on collection. Args:`, args);
+      console.log(`[Firestore DB ${modelName}:create] Delegating write to FirebaseService.saveRecord`);
       try {
-        const rawData = convertDatesToTimestamps(args.data || {});
-        const data = sanitizeFirestoreData(rawData);
-        let id = data.id || args.data?.id;
-
-        let docRef;
-        if (id) {
-          docRef = doc(firestore, modelName, id);
-        } else {
-          const collRef = collection(firestore, modelName);
-          docRef = doc(collRef);
-          id = docRef.id;
-          data.id = id;
-        }
-
-        if (!data.createdAt) {
-          data.createdAt = Timestamp.now();
-        }
-        if (!data.updatedAt) {
-          data.updatedAt = Timestamp.now();
-        }
-
-        console.log(`[Firestore DB ${modelName}:create] Resolved ID: ${id}. Executing setDoc...`);
-        await setDoc(docRef, data);
-        console.log(`[Firestore DB ${modelName}:create] Write complete. Fetching updated record...`);
-
-        const savedDoc = await getDoc(docRef);
-        const result = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
-        console.log(`[Firestore DB ${modelName}:create] Success. Return data:`, result);
+        const id = args.data?.id || args.data?._id;
+        const result = await FirebaseService.saveRecord(modelName, id, args.data || {});
         return result;
       } catch (err: any) {
-        console.error(`[Firestore DB ${modelName}:create] FAILED to create document:`, err);
+        console.error(`[Firestore DB ${modelName}:create] Failed through FirebaseService:`, err);
         throw err;
       }
     },
 
     async update(args: any) {
-      console.log(`[Firestore DB ${modelName}:update] Start update on collection. Args:`, args);
+      console.log(`[Firestore DB ${modelName}:update] Delegating write to FirebaseService.updateRecord`);
       try {
-        const rawData = convertDatesToTimestamps(args.data || {});
-        const data = sanitizeFirestoreData(rawData);
         const where = args.where || {};
         let id = where.id;
 
@@ -457,24 +413,16 @@ function createModelProxy(modelName: string) {
           id = matched.id;
         }
 
-        data.updatedAt = Timestamp.now();
-        const docRef = doc(firestore, modelName, id);
-        console.log(`[Firestore DB ${modelName}:update] Executing updateDoc on ${id}...`);
-        await updateDoc(docRef, data);
-        console.log(`[Firestore DB ${modelName}:update] Update complete. Fetching updated record...`);
-
-        const savedDoc = await getDoc(docRef);
-        const result = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
-        console.log(`[Firestore DB ${modelName}:update] Success. Return data:`, result);
+        const result = await FirebaseService.updateRecord(modelName, id, args.data || {});
         return result;
       } catch (err: any) {
-        console.error(`[Firestore DB ${modelName}:update] FAILED to update document:`, err);
+        console.error(`[Firestore DB ${modelName}:update] Failed through FirebaseService:`, err);
         throw err;
       }
     },
 
     async delete(args: any) {
-      console.log(`[Firestore DB ${modelName}:delete] Start delete on collection. Args:`, args);
+      console.log(`[Firestore DB ${modelName}:delete] Delegating write to FirebaseService.deleteRecord`);
       try {
         const where = args.where || {};
         let id = where.id;
@@ -490,16 +438,10 @@ function createModelProxy(modelName: string) {
           id = matched.id;
         }
 
-        const docRef = doc(firestore, modelName, id);
-        const savedDoc = await getDoc(docRef);
-        const deletedData = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
-        
-        console.log(`[Firestore DB ${modelName}:delete] Executing deleteDoc on ${id}...`);
-        await deleteDoc(docRef);
-        console.log(`[Firestore DB ${modelName}:delete] Success. Deleted record ID: ${id}`);
-        return deletedData;
+        const result = await FirebaseService.deleteRecord(modelName, id);
+        return result;
       } catch (err: any) {
-        console.error(`[Firestore DB ${modelName}:delete] FAILED to delete document:`, err);
+        console.error(`[Firestore DB ${modelName}:delete] Failed through FirebaseService:`, err);
         throw err;
       }
     },

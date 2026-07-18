@@ -6,26 +6,28 @@ const projectId = process.env.FIREBASE_PROJECT_ID || firebaseConfig?.projectId;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-export const isFirebaseAdminAvailable = !!(projectId && clientEmail && privateKey) || (typeof window === 'undefined' && !process.env.VERCEL);
+export const isFirebaseAdminAvailable = !!(projectId && clientEmail && privateKey);
 
-let adminApp;
+let adminApp: any = null;
+let adminAuthInstance: any = null;
 
-if (getApps().length === 0) {
-  if (projectId && clientEmail && privateKey) {
-    adminApp = initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
-      }),
-    });
-  } else {
-    adminApp = initializeApp({
-      projectId: projectId || 'pro-bolso',
-    });
+if (isFirebaseAdminAvailable) {
+  try {
+    if (getApps().length === 0) {
+      adminApp = initializeApp({
+        credential: cert({
+          projectId: projectId!,
+          clientEmail: clientEmail!,
+          privateKey: privateKey!.replace(/\\n/g, '\n'),
+        }),
+      });
+    } else {
+      adminApp = getApp();
+    }
+    adminAuthInstance = getAuth(adminApp);
+  } catch (err) {
+    console.error("Error initializing Firebase Admin SDK:", err);
   }
-} else {
-  adminApp = getApp();
 }
 
-export const adminAuth = getAuth(adminApp);
+export const adminAuth = adminAuthInstance;

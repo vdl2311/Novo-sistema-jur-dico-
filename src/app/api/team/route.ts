@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   
   let firebaseUser;
   
-  if (!isFirebaseAdminAvailable) {
+  if (!isFirebaseAdminAvailable || !adminAuth) {
     console.warn("Firebase Admin is not available or disabled. Creating fallback Firestore-only user.");
     try {
       const existing = await db.user.findFirst({ where: { email: body.email } })
@@ -111,7 +111,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json()
 
   // Sincroniza e-mail ou nome alterados com o Firebase Auth
-  if (isFirebaseAdminAvailable && !id.startsWith('fallback_')) {
+  if (isFirebaseAdminAvailable && adminAuth && !id.startsWith('fallback_')) {
     try {
       const updateParams: any = {}
       if (body.email) updateParams.email = body.email
@@ -146,7 +146,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   
   // Deleta o usuário do Firebase Auth
-  if (isFirebaseAdminAvailable && !id.startsWith('fallback_')) {
+  if (isFirebaseAdminAvailable && adminAuth && !id.startsWith('fallback_')) {
     try {
       await adminAuth.deleteUser(id)
     } catch (err) {
