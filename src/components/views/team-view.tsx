@@ -82,6 +82,8 @@ export function TeamView() {
         email: data.email,
         role: data.role,
         permissions: data.permissions,
+        oab: data.oab,
+        twoFactorEnabled: data.twoFactorEnabled,
       });
       setModalOpen(false);
     } catch (error) {

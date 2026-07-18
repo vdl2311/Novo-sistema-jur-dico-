@@ -10,6 +10,8 @@ interface InviteData {
   email: string;
   role: string;
   permissions: string;
+  oab?: string;
+  twoFactorEnabled?: boolean;
 }
 
 export function useTeamInvite() {
@@ -29,6 +31,8 @@ export function useTeamInvite() {
         email: data.email,
         role: data.role,
         permissions: data.permissions,
+        oab: data.oab,
+        twoFactorEnabled: data.twoFactorEnabled,
       });
 
       toast({
