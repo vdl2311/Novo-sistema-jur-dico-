@@ -1,0 +1,144 @@
+'use client'
+
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
+import { useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Bell, CheckCheck, AlarmClock, DollarSign, CheckSquare, Info, AlertTriangle,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { priorityColor, formatDateTime } from '@/lib/format'
+
+export function NotificationsView() {
+  const convexNotifications = useQuery(api.notifications.listByUser, { userId: "user-123" }) // Em um sistema real, usaria o ID do usuário logado
+  const markReadMutation = useMutation(api.notifications.markAsRead)
+  const markAllReadMutation = useMutation(api.notifications.markAllAsRead)
+  
+  const [filter, setFilter] = useState<'todas' | 'naolidas'>('todas')
+
+  const items = convexNotifications || []
+  const loading = convexNotifications === undefined
+
+  const markRead = async (id: any) => {
+    await markReadMutation({ id })
+  }
+
+  const markAllRead = async () => {
+    await markAllReadMutation({ userId: "user-123" })
+  }
+
+  const filtered = filter === 'naolidas' ? items.filter((i) => !i.read) : items
+  const naoLidas = items.filter((i) => !i.read).length
+
+  const iconFor = (type: string) => {
+    switch (type) {
+      case 'prazo': return AlarmClock
+      case 'honorario': return DollarSign
+      case 'tarefa': return CheckSquare
+      case 'audiencia': return AlertTriangle
+      default: return Info
+    }
+  }
+
+  const colorFor = (type: string) => {
+    switch (type) {
+      case 'prazo': return 'text-amber-600 bg-amber-50 dark:bg-amber-950/30'
+      case 'honorario': return 'text-red-600 bg-red-50 dark:bg-red-950/30'
+      case 'tarefa': return 'text-purple-600 bg-purple-50 dark:bg-purple-950/30'
+      case 'audiencia': return 'text-red-600 bg-red-50 dark:bg-red-950/30'
+      default: return 'text-blue-600 bg-blue-50 dark:bg-blue-950/30'
+    }
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 rounded-md border border-border p-0.5 bg-muted/30">
+          <button
+            onClick={() => setFilter('todas')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
+              filter === 'todas' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+            )}
+          >
+            Todas ({items.length})
+          </button>
+          <button
+            onClick={() => setFilter('naolidas')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
+              filter === 'naolidas' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+            )}
+          >
+            Não lidas ({naoLidas})
+          </button>
+        </div>
+        {naoLidas > 0 && (
+          <Button variant="outline" size="sm" onClick={markAllRead}>
+            <CheckCheck className="h-4 w-4 mr-1.5" />
+            Marcar todas como lidas
+          </Button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 rounded-md bg-muted/40 animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Bell className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              {filter === 'naolidas' ? 'Nenhuma notificação não lida.' : 'Nenhuma notificação.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((n: any) => {
+            const Icon = iconFor(n.type)
+            const createdAtISO = typeof n.createdAt === 'number' ? new Date(n.createdAt).toISOString() : n.createdAt;
+            return (
+              <Card key={n._id} className={cn(!n.read && 'border-l-4 border-l-primary')}>
+                <CardContent className="p-3.5 flex items-start gap-3">
+                  <div className={cn('h-9 w-9 rounded-md flex items-center justify-center shrink-0', colorFor(n.type))}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className={cn('text-sm', n.read ? 'font-normal' : 'font-semibold')}>{n.title}</p>
+                      <span className={cn('text-[10px] px-1.5 py-0.5 rounded border font-medium', priorityColor(n.priority || 'Média'))}>
+                        {n.priority || 'Média'}
+                      </span>
+                      {!n.read && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    {n.message && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{n.message}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {formatDateTime(createdAtISO)}
+                    </p>
+                  </div>
+                  {!n.read && (
+                    <Button size="sm" variant="ghost" onClick={() => markRead(n._id)}>
+                      <CheckCheck className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+

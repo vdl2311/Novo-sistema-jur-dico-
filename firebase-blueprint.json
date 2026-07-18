@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for advocates and staff",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "oab": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email", "name", "role"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Client of the law firm",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email", "status"]
+    },
+    "Process": {
+      "title": "Process",
+      "description": "Legal process case file",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "number": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "area": { "type": "string" },
+        "caseValue": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "number", "title", "status"]
+    }
+  },
+  "firestore": {
+    "/user/{userId}": {
+      "schema": "User",
+      "description": "Advocates and firm staff accounts"
+    },
+    "/client/{clientId}": {
+      "schema": "Client",
+      "description": "Clients records"
+    },
+    "/process/{processId}": {
+      "schema": "Process",
+      "description": "Legal processes"
+    }
+  }
+}

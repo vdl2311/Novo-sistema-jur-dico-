@@ -1,0 +1,6 @@
+{
+  "name": "Jurisistem",
+  "description": "Sistema jurídico inteligente para advogados e escritórios de advocacia, com gestão de processos, clientes, tarefas, prazos, faturamento e integração com IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
