@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+async function safeQuery<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await promise
+  } catch (err) {
+    console.error("Dashboard API error on subquery:", err)
+    return fallback
+  }
+}
+
 // GET /api/dashboard - Métricas agregadas para dashboard acionável
 export async function GET() {
   const hoje = new Date()
@@ -27,49 +36,49 @@ export async function GET() {
     processosSemMovimento,
     tarefasPendentes,
   ] = await Promise.all([
-    db.process.count({ where: { status: 'Ativo' } }),
-    db.process.count({ where: { status: 'Encerrado' } }),
-    db.client.count({ where: { status: 'Ativo' } }),
-    db.deadline.findMany({
+    safeQuery(db.process.count({ where: { status: 'Ativo' } }), 0),
+    safeQuery(db.process.count({ where: { status: 'Encerrado' } }), 0),
+    safeQuery(db.client.count({ where: { status: 'Ativo' } }), 0),
+    safeQuery(db.deadline.findMany({
       where: { done: false, dueDate: { gte: inicioHoje, lt: fimHoje } },
       include: { process: true },
       orderBy: { dueDate: 'asc' },
-    }),
-    db.deadline.findMany({
+    }), []),
+    safeQuery(db.deadline.findMany({
       where: { done: false, dueDate: { gte: inicioHoje, lte: proximos7 } },
       include: { process: true },
       orderBy: { dueDate: 'asc' },
-    }),
-    db.deadline.count({
+    }), []),
+    safeQuery(db.deadline.count({
       where: { done: false, priority: 'Crítica' },
-    }),
-    db.deadline.findMany({
+    }), 0),
+    safeQuery(db.deadline.findMany({
       where: {
         done: false,
         dueDate: { gte: inicioHoje, lt: fimHoje },
         title: { contains: 'Audiência' },
       },
       include: { process: true },
-    }),
-    db.task.count({
+    }), []),
+    safeQuery(db.task.count({
       where: {
         status: { not: 'Concluída' },
         dueDate: { lt: inicioHoje },
       },
-    }),
-    db.financial.findMany({
+    }), 0),
+    safeQuery(db.financial.findMany({
       where: { type: 'Receita', status: 'Atrasado' },
       include: { client: true, process: true },
-    }),
-    db.financial.findMany({
+    }), []),
+    safeQuery(db.financial.findMany({
       where: {
         type: 'Receita',
         status: 'Pendente',
         dueDate: { gte: inicioHoje, lte: proximos7 },
       },
       include: { client: true, process: true },
-    }),
-    db.financial.aggregate({
+    }), []),
+    safeQuery(db.financial.aggregate({
       where: {
         type: 'Receita',
         status: 'Pago',
@@ -79,8 +88,8 @@ export async function GET() {
         },
       },
       _sum: { amount: true },
-    }),
-    db.financial.aggregate({
+    }), { _sum: { amount: 0 } }),
+    safeQuery(db.financial.aggregate({
       where: {
         type: 'Despesa',
         status: 'Pago',
@@ -90,31 +99,31 @@ export async function GET() {
         },
       },
       _sum: { amount: true },
-    }),
-    db.financial.aggregate({
+    }), { _sum: { amount: 0 } }),
+    safeQuery(db.financial.aggregate({
       where: {
         type: 'Receita',
         status: { in: ['Pendente', 'Atrasado'] },
       },
       _sum: { amount: true },
-    }),
-    db.financial.aggregate({
+    }), { _sum: { amount: 0 } }),
+    safeQuery(db.financial.aggregate({
       where: {
         type: 'Despesa',
         status: { in: ['Pendente', 'Atrasado'] },
       },
       _sum: { amount: true },
-    }),
-    db.process.findMany({
+    }), { _sum: { amount: 0 } }),
+    safeQuery(db.process.findMany({
       where: { status: 'Ativo' },
       include: { movements: { orderBy: { date: 'desc' }, take: 1 } },
-    }),
-    db.task.count({ where: { status: { not: 'Concluída' } } }),
+    }), []),
+    safeQuery(db.task.count({ where: { status: { not: 'Concluída' } } }), 0),
   ])
 
   // Filtrar processos sem movimento há mais de 90 dias
   const processosParados = processosSemMovimento.filter((p) => {
-    if (p.movements.length === 0) return true
+    if (!p.movements || p.movements.length === 0) return true
     return new Date(p.movements[0].date) < dias90Atras
   })
 
@@ -124,36 +133,36 @@ export async function GET() {
     const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1)
     const fim = new Date(hoje.getFullYear(), hoje.getMonth() - i + 1, 1)
     const [rec, desp] = await Promise.all([
-      db.financial.aggregate({
+      safeQuery(db.financial.aggregate({
         where: {
           type: 'Receita',
           status: 'Pago',
           paidDate: { gte: inicio, lt: fim },
         },
         _sum: { amount: true },
-      }),
-      db.financial.aggregate({
+      }), { _sum: { amount: 0 } }),
+      safeQuery(db.financial.aggregate({
         where: {
           type: 'Despesa',
           status: 'Pago',
           paidDate: { gte: inicio, lt: fim },
         },
         _sum: { amount: true },
-      }),
+      }), { _sum: { amount: 0 } }),
     ])
     mesesGrafico.push({
       mes: inicio.toLocaleDateString('pt-BR', { month: 'short' }),
-      receita: rec._sum.amount || 0,
-      despesa: desp._sum.amount || 0,
+      receita: rec?._sum?.amount || 0,
+      despesa: desp?._sum?.amount || 0,
     })
   }
 
   // Distribuição por área
-  const processosPorArea = await db.process.groupBy({
+  const processosPorArea = await safeQuery(db.process.groupBy({
     by: ['area'],
     _count: { area: true },
     where: { status: 'Ativo' },
-  })
+  }), [])
 
   return NextResponse.json({
     hoje: inicioHoje.toISOString(),
@@ -168,10 +177,10 @@ export async function GET() {
       tarefasAtrasadas,
       tarefasPendentes,
       processosParados: processosParados.length,
-      aReceber: aReceberMes._sum.amount || 0,
-      aPagar: aPagarMes._sum.amount || 0,
-      recebidoMes: recebidoMes._sum.amount || 0,
-      despesasMes: despesasMes._sum.amount || 0,
+      aReceber: aReceberMes?._sum?.amount || 0,
+      aPagar: aPagarMes?._sum?.amount || 0,
+      recebidoMes: recebidoMes?._sum?.amount || 0,
+      despesasMes: despesasMes?._sum?.amount || 0,
     },
     prazosDeHoje: prazosHoje,
     proximosPrazos: prazos7Dias,
@@ -182,15 +191,15 @@ export async function GET() {
       id: p.id,
       title: p.title,
       cnj: p.cnj,
-      ultimaMovimentacao: p.movements[0]?.date || null,
-      diasParado: p.movements[0]
+      ultimaMovimentacao: p.movements?.[0]?.date || null,
+      diasParado: p.movements?.[0]
         ? Math.floor((hoje.getTime() - new Date(p.movements[0].date).getTime()) / 86400000)
         : 999,
     })),
     graficoMensal: mesesGrafico,
     processosPorArea: processosPorArea.map((p) => ({
       area: p.area || 'Não informado',
-      total: p._count.area,
+      total: p._count?.area || 0,
     })),
   })
 }

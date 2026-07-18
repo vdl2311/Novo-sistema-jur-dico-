@@ -32,12 +32,10 @@ if (isAvailable && privateKey) {
   }
 }
 
-export const isFirebaseAdminAvailable = isAvailable;
-
 let adminApp: any = null;
 let adminAuthInstance: any = null;
 
-if (isFirebaseAdminAvailable) {
+if (isAvailable) {
   try {
     if (getApps().length === 0) {
       adminApp = initializeApp({
@@ -57,4 +55,5 @@ if (isFirebaseAdminAvailable) {
   }
 }
 
+export const isFirebaseAdminAvailable = isAvailable;
 export const adminAuth = adminAuthInstance;
