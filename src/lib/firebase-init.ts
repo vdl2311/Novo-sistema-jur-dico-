@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const config = {
@@ -16,4 +16,14 @@ const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || firebaseConfi
 
 const app = getApps().length === 0 ? initializeApp(config) : getApp();
 
-export const firestore = getFirestore(app, databaseId);
+let firestoreInstance;
+try {
+  firestoreInstance = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  }, databaseId);
+} catch (e) {
+  firestoreInstance = getFirestore(app, databaseId);
+}
+
+export const firestore = firestoreInstance;
+
