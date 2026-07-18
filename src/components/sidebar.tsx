@@ -95,7 +95,7 @@ export function Sidebar({ current, onNavigate, collapsed, onToggleCollapse }: Si
   return (
     <aside
       className={cn(
-        'flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200',
+        'flex flex-col h-full border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200',
         collapsed ? 'w-[68px]' : 'w-[244px]'
       )}
     >

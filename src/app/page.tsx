@@ -207,9 +207,9 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar desktop */}
-      <div className="hidden md:flex">
+      <div className="hidden md:flex h-full shrink-0">
         <Sidebar
           current={view}
           onNavigate={navigate}
@@ -236,7 +236,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 h-full">
         <TopBar
           onOpenSearch={() => setCommandOpen(true)}
           onOpenCopilot={() => setView('copilot')}
