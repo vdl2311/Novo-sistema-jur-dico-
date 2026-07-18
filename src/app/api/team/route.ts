@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { adminAuth } from '@/lib/firebase-admin'
+import { adminAuth, isFirebaseAdminAvailable } from '@/lib/firebase-admin'
 
 // GET /api/team
 export async function GET() {
@@ -26,40 +26,55 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   
   let firebaseUser;
-  try {
-    firebaseUser = await adminAuth.createUser({
-      email: body.email,
-      password: 'demo123', // Senha padrão informada no modal
-      displayName: body.name,
-    })
-  } catch (err: any) {
-    const errorMsg = String(err.message || err).toLowerCase();
-    const isApiDisabled = errorMsg.includes('identitytoolkit') || 
-                         errorMsg.includes('api') || 
-                         errorMsg.includes('disabled') || 
-                         errorMsg.includes('overview') || 
-                         errorMsg.includes('permission');
-                         
-    if (err.code === 'auth/email-already-exists') {
-      try {
-        firebaseUser = await adminAuth.getUserByEmail(body.email)
-      } catch (getErr: any) {
-        return NextResponse.json({ error: `Erro ao obter usuário existente no Firebase: ${getErr.message}` }, { status: 400 })
-      }
-    } else if (isApiDisabled) {
-      console.warn("Firebase Auth Identity Toolkit API not enabled/available. Creating fallback Firestore-only user.");
-      try {
-        const existing = await db.user.findFirst({ where: { email: body.email } })
-        if (existing) {
-          firebaseUser = { uid: existing.id }
-        } else {
-          firebaseUser = { uid: `fallback_${Math.random().toString(36).substring(2, 15)}` }
-        }
-      } catch (dbErr) {
+  
+  if (!isFirebaseAdminAvailable) {
+    console.warn("Firebase Admin is not available or disabled. Creating fallback Firestore-only user.");
+    try {
+      const existing = await db.user.findFirst({ where: { email: body.email } })
+      if (existing) {
+        firebaseUser = { uid: existing.id }
+      } else {
         firebaseUser = { uid: `fallback_${Math.random().toString(36).substring(2, 15)}` }
       }
-    } else {
-      return NextResponse.json({ error: `Erro ao criar usuário no Firebase Auth: ${err.message}` }, { status: 400 })
+    } catch (dbErr) {
+      firebaseUser = { uid: `fallback_${Math.random().toString(36).substring(2, 15)}` }
+    }
+  } else {
+    try {
+      firebaseUser = await adminAuth.createUser({
+        email: body.email,
+        password: 'demo123', // Senha padrão informada no modal
+        displayName: body.name,
+      })
+    } catch (err: any) {
+      const errorMsg = String(err.message || err).toLowerCase();
+      const isApiDisabled = errorMsg.includes('identitytoolkit') || 
+                           errorMsg.includes('api') || 
+                           errorMsg.includes('disabled') || 
+                           errorMsg.includes('overview') || 
+                           errorMsg.includes('permission');
+                           
+      if (err.code === 'auth/email-already-exists') {
+        try {
+          firebaseUser = await adminAuth.getUserByEmail(body.email)
+        } catch (getErr: any) {
+          return NextResponse.json({ error: `Erro ao obter usuário existente no Firebase: ${getErr.message}` }, { status: 400 })
+        }
+      } else if (isApiDisabled) {
+        console.warn("Firebase Auth Identity Toolkit API not enabled/available. Creating fallback Firestore-only user.");
+        try {
+          const existing = await db.user.findFirst({ where: { email: body.email } })
+          if (existing) {
+            firebaseUser = { uid: existing.id }
+          } else {
+            firebaseUser = { uid: `fallback_${Math.random().toString(36).substring(2, 15)}` }
+          }
+        } catch (dbErr) {
+          firebaseUser = { uid: `fallback_${Math.random().toString(36).substring(2, 15)}` }
+        }
+      } else {
+        return NextResponse.json({ error: `Erro ao criar usuário no Firebase Auth: ${err.message}` }, { status: 400 })
+      }
     }
   }
 
@@ -96,16 +111,18 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json()
 
   // Sincroniza e-mail ou nome alterados com o Firebase Auth
-  try {
-    const updateParams: any = {}
-    if (body.email) updateParams.email = body.email
-    if (body.name) updateParams.displayName = body.name
-    
-    if (Object.keys(updateParams).length > 0) {
-      await adminAuth.updateUser(id, updateParams)
+  if (isFirebaseAdminAvailable && !id.startsWith('fallback_')) {
+    try {
+      const updateParams: any = {}
+      if (body.email) updateParams.email = body.email
+      if (body.name) updateParams.displayName = body.name
+      
+      if (Object.keys(updateParams).length > 0) {
+        await adminAuth.updateUser(id, updateParams)
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar e-mail/nome no Firebase Auth:", err)
     }
-  } catch (err) {
-    console.error("Erro ao atualizar e-mail/nome no Firebase Auth:", err)
   }
 
   const allowedFields: Record<string, unknown> = {}
@@ -129,10 +146,12 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   
   // Deleta o usuário do Firebase Auth
-  try {
-    await adminAuth.deleteUser(id)
-  } catch (err) {
-    console.error("Erro ao deletar usuário no Firebase Auth:", err)
+  if (isFirebaseAdminAvailable && !id.startsWith('fallback_')) {
+    try {
+      await adminAuth.deleteUser(id)
+    } catch (err) {
+      console.error("Erro ao deletar usuário no Firebase Auth:", err)
+    }
   }
 
   await db.user.delete({ where: { id } })
