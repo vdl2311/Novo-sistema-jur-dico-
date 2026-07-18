@@ -84,6 +84,28 @@ function convertDatesToTimestamps(obj: any): any {
   return obj;
 }
 
+// Sanitiza e remove campos "undefined" que causam falhas de escrita no Firestore
+function sanitizeFirestoreData(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (obj instanceof Timestamp) return obj;
+  if (obj instanceof Date) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeFirestoreData);
+  }
+  if (typeof obj === 'object') {
+    if (obj.constructor && obj.constructor.name !== 'Object') return obj;
+    const newObj: any = {};
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (val !== undefined) {
+        newObj[key] = sanitizeFirestoreData(val);
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
+
 // Avalia os critérios de busca (match) baseados nas opções do Prisma
 function matchCriteria(item: any, where: any): boolean {
   if (!where) return true;
@@ -379,112 +401,160 @@ function createModelProxy(modelName: string) {
     },
 
     async create(args: any) {
-      const data = convertDatesToTimestamps(args.data || {});
-      let id = data.id || args.data?.id;
+      console.log(`[Firestore DB ${modelName}:create] Start write on collection. Args:`, args);
+      try {
+        const rawData = convertDatesToTimestamps(args.data || {});
+        const data = sanitizeFirestoreData(rawData);
+        let id = data.id || args.data?.id;
 
-      let docRef;
-      if (id) {
-        docRef = doc(firestore, modelName, id);
-      } else {
-        const collRef = collection(firestore, modelName);
-        docRef = doc(collRef);
-        id = docRef.id;
-        data.id = id;
+        let docRef;
+        if (id) {
+          docRef = doc(firestore, modelName, id);
+        } else {
+          const collRef = collection(firestore, modelName);
+          docRef = doc(collRef);
+          id = docRef.id;
+          data.id = id;
+        }
+
+        if (!data.createdAt) {
+          data.createdAt = Timestamp.now();
+        }
+        if (!data.updatedAt) {
+          data.updatedAt = Timestamp.now();
+        }
+
+        console.log(`[Firestore DB ${modelName}:create] Resolved ID: ${id}. Executing setDoc...`);
+        await setDoc(docRef, data);
+        console.log(`[Firestore DB ${modelName}:create] Write complete. Fetching updated record...`);
+
+        const savedDoc = await getDoc(docRef);
+        const result = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
+        console.log(`[Firestore DB ${modelName}:create] Success. Return data:`, result);
+        return result;
+      } catch (err: any) {
+        console.error(`[Firestore DB ${modelName}:create] FAILED to create document:`, err);
+        throw err;
       }
-
-      if (!data.createdAt) {
-        data.createdAt = Timestamp.now();
-      }
-      if (!data.updatedAt) {
-        data.updatedAt = Timestamp.now();
-      }
-
-      await setDoc(docRef, data);
-
-      const savedDoc = await getDoc(docRef);
-      return convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
     },
 
     async update(args: any) {
-      const data = convertDatesToTimestamps(args.data || {});
-      const where = args.where || {};
-      let id = where.id;
+      console.log(`[Firestore DB ${modelName}:update] Start update on collection. Args:`, args);
+      try {
+        const rawData = convertDatesToTimestamps(args.data || {});
+        const data = sanitizeFirestoreData(rawData);
+        const where = args.where || {};
+        let id = where.id;
 
-      if (!id) {
-        const q = buildFirestoreQuery(modelName, where);
-        const snapshot = await getDocs(q);
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
-        const matched = items.find(item => matchCriteria(item, where));
-        if (!matched) {
-          throw new Error(`Record to update not found for criteria: ${JSON.stringify(where)}`);
+        if (!id) {
+          const q = buildFirestoreQuery(modelName, where);
+          const snapshot = await getDocs(q);
+          const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
+          const matched = items.find(item => matchCriteria(item, where));
+          if (!matched) {
+            throw new Error(`Record to update not found for criteria: ${JSON.stringify(where)}`);
+          }
+          id = matched.id;
         }
-        id = matched.id;
+
+        data.updatedAt = Timestamp.now();
+        const docRef = doc(firestore, modelName, id);
+        console.log(`[Firestore DB ${modelName}:update] Executing updateDoc on ${id}...`);
+        await updateDoc(docRef, data);
+        console.log(`[Firestore DB ${modelName}:update] Update complete. Fetching updated record...`);
+
+        const savedDoc = await getDoc(docRef);
+        const result = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
+        console.log(`[Firestore DB ${modelName}:update] Success. Return data:`, result);
+        return result;
+      } catch (err: any) {
+        console.error(`[Firestore DB ${modelName}:update] FAILED to update document:`, err);
+        throw err;
       }
-
-      data.updatedAt = Timestamp.now();
-      const docRef = doc(firestore, modelName, id);
-      await updateDoc(docRef, data);
-
-      const savedDoc = await getDoc(docRef);
-      return convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
     },
 
     async delete(args: any) {
-      const where = args.where || {};
-      let id = where.id;
+      console.log(`[Firestore DB ${modelName}:delete] Start delete on collection. Args:`, args);
+      try {
+        const where = args.where || {};
+        let id = where.id;
 
-      if (!id) {
-        const q = buildFirestoreQuery(modelName, where);
-        const snapshot = await getDocs(q);
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
-        const matched = items.find(item => matchCriteria(item, where));
-        if (!matched) {
-          throw new Error(`Record to delete not found for criteria: ${JSON.stringify(where)}`);
+        if (!id) {
+          const q = buildFirestoreQuery(modelName, where);
+          const snapshot = await getDocs(q);
+          const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
+          const matched = items.find(item => matchCriteria(item, where));
+          if (!matched) {
+            throw new Error(`Record to delete not found for criteria: ${JSON.stringify(where)}`);
+          }
+          id = matched.id;
         }
-        id = matched.id;
-      }
 
-      const docRef = doc(firestore, modelName, id);
-      const savedDoc = await getDoc(docRef);
-      const deletedData = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
-      await deleteDoc(docRef);
-      return deletedData;
+        const docRef = doc(firestore, modelName, id);
+        const savedDoc = await getDoc(docRef);
+        const deletedData = convertTimestampsToDates({ id: savedDoc.id, ...(savedDoc.data() as any || {}) });
+        
+        console.log(`[Firestore DB ${modelName}:delete] Executing deleteDoc on ${id}...`);
+        await deleteDoc(docRef);
+        console.log(`[Firestore DB ${modelName}:delete] Success. Deleted record ID: ${id}`);
+        return deletedData;
+      } catch (err: any) {
+        console.error(`[Firestore DB ${modelName}:delete] FAILED to delete document:`, err);
+        throw err;
+      }
     },
 
     async deleteMany(args: any = {}) {
-      const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
-      let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
-      if (args.where) {
-        items = items.filter(item => matchCriteria(item, args.where));
-      }
+      console.log(`[Firestore DB ${modelName}:deleteMany] Start batch delete on collection. Args:`, args);
+      try {
+        const q = buildFirestoreQuery(modelName, args.where);
+        const snapshot = await getDocs(q);
+        let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
+        if (args.where) {
+          items = items.filter(item => matchCriteria(item, args.where));
+        }
 
-      const batch = writeBatch(firestore);
-      for (const item of items) {
-        const docRef = doc(firestore, modelName, item.id);
-        batch.delete(docRef);
+        console.log(`[Firestore DB ${modelName}:deleteMany] Found ${items.length} records matching criteria. Executing batch delete...`);
+        const batch = writeBatch(firestore);
+        for (const item of items) {
+          const docRef = doc(firestore, modelName, item.id);
+          batch.delete(docRef);
+        }
+        await batch.commit();
+        console.log(`[Firestore DB ${modelName}:deleteMany] Batch delete successfully committed.`);
+        return { count: items.length };
+      } catch (err: any) {
+        console.error(`[Firestore DB ${modelName}:deleteMany] FAILED batch delete:`, err);
+        throw err;
       }
-      await batch.commit();
-      return { count: items.length };
     },
 
     async updateMany(args: any = {}) {
-      const data = convertDatesToTimestamps(args.data || {});
-      const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
-      let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
-      if (args.where) {
-        items = items.filter(item => matchCriteria(item, args.where));
-      }
+      console.log(`[Firestore DB ${modelName}:updateMany] Start batch update on collection. Args:`, args);
+      try {
+        const rawData = convertDatesToTimestamps(args.data || {});
+        const data = sanitizeFirestoreData(rawData);
+        const q = buildFirestoreQuery(modelName, args.where);
+        const snapshot = await getDocs(q);
+        let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
+        if (args.where) {
+          items = items.filter(item => matchCriteria(item, args.where));
+        }
 
-      data.updatedAt = Timestamp.now();
-      const batch = writeBatch(firestore);
-      for (const item of items) {
-        const docRef = doc(firestore, modelName, item.id);
-        batch.update(docRef, data);
+        data.updatedAt = Timestamp.now();
+        console.log(`[Firestore DB ${modelName}:updateMany] Found ${items.length} records matching criteria. Executing batch update...`);
+        const batch = writeBatch(firestore);
+        for (const item of items) {
+          const docRef = doc(firestore, modelName, item.id);
+          batch.update(docRef, data);
+        }
+        await batch.commit();
+        console.log(`[Firestore DB ${modelName}:updateMany] Batch update successfully committed.`);
+        return { count: items.length };
+      } catch (err: any) {
+        console.error(`[Firestore DB ${modelName}:updateMany] FAILED batch update:`, err);
+        throw err;
       }
-      await batch.commit();
-      return { count: items.length };
     },
 
     async count(args: any = {}) {

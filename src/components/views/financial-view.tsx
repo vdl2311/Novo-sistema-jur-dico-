@@ -55,7 +55,13 @@ export function FinancialView() {
   })
 
   const markPaid = async (id: any) => {
-    await markAsPaid({ id })
+    console.log(`[FinancialView:markPaid] Triggering payment marking for financial transaction ID: ${id}`);
+    try {
+      const result = await markAsPaid({ id });
+      console.log("[FinancialView:markPaid] Transaction marked as paid successfully. Result:", result);
+    } catch (error: any) {
+      console.error("[FinancialView:markPaid] Error marking transaction as paid:", error);
+    }
   }
 
   const totalReceita = items.filter((i) => i.type === 'Receita' && i.status === 'Pago').reduce((s, i) => s + i.amount, 0)

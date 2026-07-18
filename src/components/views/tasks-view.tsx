@@ -89,17 +89,21 @@ export function TasksView({ onOpenProcess }: Props) {
     const task = items.find((t: any) => t._id === active.id)
     if (!task || task.status === newStatus) return
 
+    console.log(`[TasksView:onDragEnd] Moving task ID: ${task._id} to new status: ${newStatus}`);
     try {
-      await updateTask({ id: task._id as any, status: newStatus })
+      const result = await updateTask({ id: task._id as any, status: newStatus })
+      console.log("[TasksView:onDragEnd] Task moved successfully. Result:", result);
       toast({ title: 'Tarefa movida', description: `${task.title} → ${newStatus}` })
     } catch (error: any) {
+      console.error("[TasksView:onDragEnd] Error moving task:", error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' })
     }
   }
 
   const handleCreate = async (data: any) => {
+    console.log("[TasksView:handleCreate] Initiating task creation. Raw form data:", data);
     try {
-      await createTask({
+      const payload = {
         title: data.title,
         description: data.description || "",
         status: data.status || 'A Fazer',
@@ -108,10 +112,14 @@ export function TasksView({ onOpenProcess }: Props) {
         assignee: data.assignee || "",
         processId: data.processId as any,
         clientId: data.clientId as any,
-      })
+      };
+      console.log("[TasksView:handleCreate] Dispatching payload:", payload);
+      const result = await createTask(payload);
+      console.log("[TasksView:handleCreate] Task created successfully. Result:", result);
       toast({ title: 'Tarefa criada no Convex' })
       setModalOpen(false)
     } catch (error: any) {
+      console.error("[TasksView:handleCreate] Error occurred during task persistence:", error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' })
     }
   }

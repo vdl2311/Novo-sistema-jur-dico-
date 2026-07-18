@@ -83,8 +83,9 @@ export function ClientsView({ selectedId }: Props) {
   }, [selectedId, convexClients])
 
   const handleCreate = async (data: any) => {
+    console.log("[ClientsView:handleCreate] Initiating client submission to Convex/Firestore API. Raw data:", data);
     try {
-      await createClient({
+      const payload = {
         name: data.name,
         type: data.type === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física',
         document: data.document || "",
@@ -98,11 +99,15 @@ export function ClientsView({ selectedId }: Props) {
         status: data.status || 'Prospect',
         tags: data.tags ? data.tags.split(',').map((t: string) => t.trim()) : [],
         notes: data.notes || "",
-      })
-      toast({ title: 'Cliente cadastrado', description: 'Cliente criado com sucesso no Convex.' })
-      setModalOpen(false)
+      };
+      console.log("[ClientsView:handleCreate] Dispatching payload:", payload);
+      const result = await createClient(payload);
+      console.log("[ClientsView:handleCreate] Client created successfully. Result:", result);
+      toast({ title: 'Cliente cadastrado', description: 'Cliente criado com sucesso no Convex.' });
+      setModalOpen(false);
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.message || 'Falha ao cadastrar cliente.', variant: 'destructive' })
+      console.error("[ClientsView:handleCreate] Error occurred during client persistence:", error);
+      toast({ title: 'Erro', description: error.message || 'Falha ao cadastrar cliente.', variant: 'destructive' });
     }
   }
 

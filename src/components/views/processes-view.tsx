@@ -83,9 +83,10 @@ export function ProcessesView({ onOpenProcess, onNavigate }: Props) {
   const clients = convexClients || []
 
   const handleCreate = async (data: any) => {
+    console.log("[ProcessesView:handleCreate] Initiating process creation. Raw form data:", data);
     try {
       const selectedClient = clients.find(c => c._id === data.clientId)
-      await createProcess({
+      const payload = {
         number: data.cnj || "Sem Número",
         title: data.title,
         clientName: selectedClient?.name || "Cliente Desconhecido",
@@ -95,10 +96,14 @@ export function ProcessesView({ onOpenProcess, onNavigate }: Props) {
         category: data.area || "Geral",
         priority: data.risk || "Normal",
         value: typeof data.caseValue === 'number' ? data.caseValue : 0,
-      })
+      };
+      console.log("[ProcessesView:handleCreate] Dispatching payload:", payload);
+      const result = await createProcess(payload);
+      console.log("[ProcessesView:handleCreate] Process created successfully. Result:", result);
       toast({ title: 'Processo cadastrado', description: 'Processo criado com sucesso no Convex.' })
       setModalOpen(false)
     } catch (error: any) {
+      console.error("[ProcessesView:handleCreate] Error occurred during process persistence:", error);
       toast({ title: 'Erro', description: error.message || 'Falha ao cadastrar processo.', variant: 'destructive' })
     }
   }

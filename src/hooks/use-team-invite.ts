@@ -20,12 +20,14 @@ export function useTeamInvite() {
   const { toast } = useToast();
 
   const inviteMember = async (data: InviteData) => {
+    console.log("[useTeamInvite:inviteMember] Initiating invite member process. Payload:", data);
     setLoading(true);
     try {
       // 1. Aqui você normalmente enviaria um e-mail de convite.
       // Para consistência imediata (conforme pedido), criamos o registro no Convex agora.
       // O campo 'externalId' será preenchido quando o usuário fizer o primeiro login via Firebase Auth.
       
+      console.log("[useTeamInvite:inviteMember] Calling createUserInConvex mutation...");
       const userId = await createUserInConvex({
         name: data.name,
         email: data.email,
@@ -35,6 +37,7 @@ export function useTeamInvite() {
         twoFactorEnabled: data.twoFactorEnabled,
       });
 
+      console.log("[useTeamInvite:inviteMember] User created successfully in Convex/Firestore. Returned userId:", userId);
       toast({
         title: "Usuário convidado!",
         description: `${data.name} foi adicionado à base do Convex com sucesso.`,
@@ -42,7 +45,7 @@ export function useTeamInvite() {
 
       return userId;
     } catch (error: any) {
-      console.error("Erro ao convidar membro:", error);
+      console.error("[useTeamInvite:inviteMember] Error inviting member:", error);
       toast({
         title: "Erro ao convidar",
         description: error.message || "Ocorreu um erro inesperado.",

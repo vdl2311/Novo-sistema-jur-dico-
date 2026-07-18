@@ -61,13 +61,16 @@ export function DeadlinesView({ onOpenProcess }: Props) {
   const loading = convexDeadlines === undefined
 
   const toggleDone = async (d: any) => {
+    console.log(`[DeadlinesView:toggleDone] Toggling done status for deadline ID: ${d._id}. Current record:`, d);
     try {
-      await completeDeadline({ id: d._id })
+      const result = await completeDeadline({ id: d._id })
+      console.log("[DeadlinesView:toggleDone] Deadline status updated successfully. Result:", result);
       toast({
         title: 'Prazo concluído',
         description: d.title,
       })
     } catch (error: any) {
+      console.error("[DeadlinesView:toggleDone] Error completing deadline:", error);
       toast({
         title: 'Erro',
         description: error.message || 'Falha ao atualizar prazo.',

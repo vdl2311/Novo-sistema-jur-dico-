@@ -156,36 +156,50 @@ export function useMutation(mutationName: any): any {
   const nameStr = typeof mutationName === 'string' ? mutationName : String(mutationName);
 
   return useCallback(async (args?: any) => {
+    console.log(`[useMutation:${nameStr}] Initiating state-saving mutation. Payload:`, args);
     const { url, method } = getApiDetails(nameStr, args);
     if (!url) {
-      throw new Error(`Invalid mutation endpoint for: ${nameStr}`);
+      const err = new Error(`Invalid mutation endpoint for: ${nameStr}`);
+      console.error(`[useMutation:${nameStr}] Setup failed:`, err);
+      throw err;
     }
 
-    const res = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: args ? JSON.stringify(args) : undefined,
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(errorText || `Mutation ${nameStr} failed with status ${res.status}`);
-    }
-
-    // Parse response if valid JSON, otherwise return true/ok
-    let resultData;
     try {
-      resultData = await res.json();
-    } catch {
-      resultData = { ok: true };
+      console.log(`[useMutation:${nameStr}] Dispatching HTTP ${method} request to: ${url}`);
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: args ? JSON.stringify(args) : undefined,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        const apiError = new Error(errorText || `Mutation ${nameStr} failed with status ${res.status}`);
+        console.error(`[useMutation:${nameStr}] Server responded with error status ${res.status}:`, errorText || "(no response text)");
+        throw apiError;
+      }
+
+      // Parse response if valid JSON, otherwise return true/ok
+      let resultData;
+      try {
+        resultData = await res.json();
+        console.log(`[useMutation:${nameStr}] Successfully received and parsed JSON response:`, resultData);
+      } catch (jsonErr) {
+        console.warn(`[useMutation:${nameStr}] Response was not valid JSON, returning fallback { ok: true }`);
+        resultData = { ok: true };
+      }
+
+      // Trigger reactive reload of all queries
+      console.log(`[useMutation:${nameStr}] Triggering query listeners to refresh current view states.`);
+      notifyQueryChange();
+
+      return resultData;
+    } catch (error: any) {
+      console.error(`[useMutation:${nameStr}] CRITICAL failure during mutation promise execution:`, error);
+      throw error;
     }
-
-    // Trigger reactive reload of all queries
-    notifyQueryChange();
-
-    return resultData;
   }, [nameStr]);
 }
 
