@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const projectId = process.env.FIREBASE_PROJECT_ID || firebaseConfig?.projectId;
@@ -27,13 +28,14 @@ if (isAvailable && privateKey) {
   if (key.includes('-----BEGIN PRIVATE KEY-----') && key.includes('-----END PRIVATE KEY-----')) {
     sanitizedPrivateKey = key;
   } else {
-    console.warn("[FirebaseAdmin] Chave privada inválida ou incompleta. Desabilitando Firebase Admin e usando fallback de Firestore local.");
+    console.warn("[FirebaseAdmin] Chave privada inválida ou incompleta. Desabilitando Firebase Admin.");
     isAvailable = false;
   }
 }
 
 let adminApp: any = null;
 let adminAuthInstance: any = null;
+let adminDbInstance: any = null;
 
 if (isAvailable) {
   try {
@@ -49,6 +51,8 @@ if (isAvailable) {
       adminApp = getApp();
     }
     adminAuthInstance = getAuth(adminApp);
+    adminDbInstance = getFirestore(adminApp, firebaseConfig?.firestoreDatabaseId || undefined);
+    console.log("[FirebaseAdmin] Firebase Admin SDK e Firestore inicializados com sucesso.");
   } catch (err) {
     console.error("Erro síncrono ao instanciar Firebase Admin SDK:", err);
     isAvailable = false;
@@ -57,3 +61,4 @@ if (isAvailable) {
 
 export const isFirebaseAdminAvailable = isAvailable;
 export const adminAuth = adminAuthInstance;
+export const adminDb = adminDbInstance;
