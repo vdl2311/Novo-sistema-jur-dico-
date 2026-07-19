@@ -4874,6 +4874,7 @@ var import_server37 = require("next/server");
 // src/lib/firebase-admin.ts
 var import_app2 = require("firebase-admin/app");
 var import_auth = require("firebase-admin/auth");
+var import_firestore4 = require("firebase-admin/firestore");
 var projectId = process.env.FIREBASE_PROJECT_ID || firebase_applet_config_default?.projectId;
 var clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 var privateKey = process.env.FIREBASE_PRIVATE_KEY;
@@ -4891,12 +4892,13 @@ if (isAvailable && privateKey) {
   if (key.includes("-----BEGIN PRIVATE KEY-----") && key.includes("-----END PRIVATE KEY-----")) {
     sanitizedPrivateKey = key;
   } else {
-    console.warn("[FirebaseAdmin] Chave privada inv\xE1lida ou incompleta. Desabilitando Firebase Admin e usando fallback de Firestore local.");
+    console.warn("[FirebaseAdmin] Chave privada inv\xE1lida ou incompleta. Desabilitando Firebase Admin.");
     isAvailable = false;
   }
 }
 var adminApp = null;
 var adminAuthInstance = null;
+var adminDbInstance = null;
 if (isAvailable) {
   try {
     if ((0, import_app2.getApps)().length === 0) {
@@ -4911,6 +4913,8 @@ if (isAvailable) {
       adminApp = (0, import_app2.getApp)();
     }
     adminAuthInstance = (0, import_auth.getAuth)(adminApp);
+    adminDbInstance = (0, import_firestore4.getFirestore)(adminApp, firebase_applet_config_default?.firestoreDatabaseId || void 0);
+    console.log("[FirebaseAdmin] Firebase Admin SDK e Firestore inicializados com sucesso.");
   } catch (err) {
     console.error("Erro s\xEDncrono ao instanciar Firebase Admin SDK:", err);
     isAvailable = false;

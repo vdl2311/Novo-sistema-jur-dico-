@@ -1,7 +1,5 @@
 "use client";
 
-import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,31 +14,41 @@ interface InviteData {
 
 export function useTeamInvite() {
   const [loading, setLoading] = useState(false);
-  const createUserInConvex = useMutation(api.users.createUser);
   const { toast } = useToast();
 
   const inviteMember = async (data: InviteData) => {
     console.log("[useTeamInvite:inviteMember] Initiating invite member process. Payload:", data);
     setLoading(true);
     try {
-      // 1. Aqui você normalmente enviaria um e-mail de convite.
-      // Para consistência imediata (conforme pedido), criamos o registro no Convex agora.
-      // O campo 'externalId' será preenchido quando o usuário fizer o primeiro login via Firebase Auth.
+      console.log("[useTeamInvite:inviteMember] Calling /api/team POST...");
       
-      console.log("[useTeamInvite:inviteMember] Calling createUserInConvex mutation...");
-      const userId = await createUserInConvex({
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        permissions: data.permissions,
-        oab: data.oab,
-        twoFactorEnabled: data.twoFactorEnabled,
+      const response = await fetch('/api/team', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          permissions: data.permissions,
+          oab: data.oab,
+          twoFactorEnabled: data.twoFactorEnabled,
+        })
       });
 
-      console.log("[useTeamInvite:inviteMember] User created successfully in Convex/Firestore. Returned userId:", userId);
+      if (!response.ok) {
+         const errorText = await response.text();
+         throw new Error(`Failed to create user: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      const userId = result.userId || result.id;
+
+      console.log("[useTeamInvite:inviteMember] User created successfully. Returned userId:", userId);
       toast({
         title: "Usuário convidado!",
-        description: `${data.name} foi adicionado à base do Convex com sucesso.`,
+        description: `${data.name} foi adicionado com sucesso.`,
       });
 
       return userId;

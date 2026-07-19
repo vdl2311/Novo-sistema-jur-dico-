@@ -1,13 +1,10 @@
 'use client'
 
-import { useMutation, useQuery } from 'convex/react'
-import { api } from '../../convex/_generated/api'
 import { useState } from 'react'
 import { Scale, Lock, Mail, Shield, ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
 import { auth } from '@/lib/firebase'
 import { db } from '@/lib/db'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
@@ -17,8 +14,6 @@ interface LoginProps {
 }
 
 export function LoginScreen({ onLogin }: LoginProps) {
-  const createUser = useMutation(api.users.createUser)
-  
   const [email, setEmail] = useState('vidal2311usa@gmail.com')
   const [password, setPassword] = useState('123456')
   const [twoFactorCode, setTwoFactorCode] = useState('')
@@ -40,13 +35,6 @@ export function LoginScreen({ onLogin }: LoginProps) {
       let firebaseUser;
       let bypassAuth = false;
       
-      const isDemo = email === 'vidal2311usa@gmail.com' || email === 'roberto@jusflow.com' || email === 'admin@jusflow.com';
-      const demoPasswords: Record<string, string> = {
-        'vidal2311usa@gmail.com': '123456',
-        'roberto@jusflow.com': 'demo123',
-        'admin@jusflow.com': 'demo123',
-      };
-
       try {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         firebaseUser = userCred.user;
@@ -101,40 +89,31 @@ export function LoginScreen({ onLogin }: LoginProps) {
         throw new Error('Falha na autenticação.');
       }
 
-      // Sincroniza com o Convex/Firestore
       let role = email === 'vidal2311usa@gmail.com' || email === 'admin@jusflow.com' ? 'Admin' : 'Advogado';
       let name = email === 'vidal2311usa@gmail.com' ? 'Administrador (Vidal)' : 
                    (email === 'admin@jusflow.com' ? 'Administrador' : 
                    (email === 'roberto@jusflow.com' ? 'Dr. Roberto Lima' : email.split('@')[0]));
       
-      let convexUserId;
-      if (bypassAuth) {
-        // Busca se existe ou cria no banco diretamente
-        const existing = await db.user.findFirst({ where: { email } });
-        if (existing) {
-          convexUserId = existing.id;
-          name = existing.name;
-          role = existing.role;
-        } else {
-          const fallbackId = `user_${Math.random().toString(36).substring(2, 15)}`;
-          const userDoc = await db.user.create({
-            data: {
-              id: fallbackId,
-              email,
-              name,
-              role,
-              permissions: ['ALL'],
-              createdAt: new Date(),
-            }
-          });
-          convexUserId = userDoc.id;
-        }
+      let dbUserId;
+      
+      const existing = await db.user.findFirst({ where: { email } });
+      if (existing) {
+        dbUserId = existing.id;
+        name = existing.name;
+        role = existing.role;
       } else {
-        convexUserId = await createUser({
-          name,
-          email,
-          role,
+        const fallbackId = `user_${Math.random().toString(36).substring(2, 15)}`;
+        const userDoc = await db.user.create({
+          data: {
+            id: fallbackId,
+            email,
+            name,
+            role,
+            permissions: ['ALL'],
+            createdAt: new Date(),
+          }
         });
+        dbUserId = userDoc.id;
       }
 
       if (requires2FA && twoFactorCode !== '123456') {
@@ -144,7 +123,7 @@ export function LoginScreen({ onLogin }: LoginProps) {
       }
 
       onLogin({
-        id: convexUserId,
+        id: dbUserId,
         name,
         email,
         role,
