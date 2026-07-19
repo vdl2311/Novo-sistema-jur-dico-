@@ -29,8 +29,15 @@ export function PortalView() {
 
   useEffect(() => {
     fetch('/api/portal?token=demo')
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) {
+          const text = await r.text();
+          throw new Error(`Status ${r.status}: ${text.substring(0, 100)}`);
+        }
+        return r.json();
+      })
       .then(setData)
+      .catch((err) => setData({ error: String(err) } as any))
       .finally(() => setLoading(false))
   }, [])
 

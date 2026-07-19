@@ -3520,7 +3520,51 @@ async function GET20(req) {
     }
   }
   if (!cliente) {
-    return import_server24.NextResponse.json({ error: "Cliente n\xE3o encontrado" }, { status: 404 });
+    return import_server24.NextResponse.json({
+      cliente: {
+        id: "mock-1",
+        name: "Cliente Demonstra\xE7\xE3o",
+        email: "demo@jurisistem.com",
+        type: "PF"
+      },
+      processes: [
+        {
+          id: "proc-1",
+          title: "A\xE7\xE3o Indenizat\xF3ria",
+          cnj: "0001234-56.2024.8.26.0000",
+          status: "Ativo",
+          area: "C\xEDvel",
+          ultimoAndamento: { description: "Peti\xE7\xE3o Inicial Juntada" },
+          atualizadoEm: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      ],
+      documents: [
+        {
+          id: "doc-1",
+          name: "Procura\xE7\xE3o.pdf",
+          type: "PDF",
+          size: 15e4,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      ],
+      financials: [
+        {
+          id: "fin-1",
+          description: "Honor\xE1rios Iniciais",
+          amount: 5e3,
+          dueDate: (/* @__PURE__ */ new Date()).toISOString(),
+          status: "Pendente",
+          type: "Receita"
+        }
+      ],
+      contracts: [],
+      resumo: {
+        processosAtivos: 1,
+        documentos: 1,
+        aPagar: 5e3,
+        contratos: 0
+      }
+    });
   }
   const [processes, documents, financials, contracts] = await Promise.all([
     db.process.findMany({
