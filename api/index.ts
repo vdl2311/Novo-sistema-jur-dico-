@@ -1,5 +1,4 @@
 import express from 'express';
-import { NextRequest } from 'next/server';
 
 // Import all API routes statically to ensure Vercel bundles them correctly
 import * as route_agents from '../src/app/api/agents/route';
@@ -45,8 +44,8 @@ import * as route_auth_login from '../src/app/api/auth/login/route';
 const app = express();
 app.use(express.json());
 
-// Helper to convert Express Request to Web Standard Request (NextRequest)
-function toNextRequest(req: express.Request): NextRequest {
+// Helper to convert Express Request to Web Standard Request (Request)
+function toNextRequest(req: express.Request): Request {
   const protocol = req.protocol;
   const host = req.get('host') || 'localhost';
   const url = `${protocol}://${host}${req.originalUrl}`;
@@ -71,7 +70,7 @@ function toNextRequest(req: express.Request): NextRequest {
     init.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
   }
 
-  return new NextRequest(url, init);
+  return new Request(url, init);
 }
 
 // Helper to send Web Response (NextResponse) back through Express Response
