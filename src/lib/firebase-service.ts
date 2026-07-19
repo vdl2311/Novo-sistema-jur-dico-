@@ -7,10 +7,30 @@ import {
   deleteDoc, 
   getDoc, 
   getDocs, 
+  getDocFromServer,
+  getDocsFromServer,
   query as fsQuery, 
   where as fsWhere, 
   Timestamp 
 } from 'firebase/firestore';
+
+const isServer = typeof window === 'undefined';
+
+async function safeGetDoc(docRef: any) {
+  if (isServer) {
+    console.log(`[FirebaseService Server] safeGetDoc calling getDocFromServer: ${docRef.path}`);
+    return await getDocFromServer(docRef);
+  }
+  return await getDoc(docRef);
+}
+
+async function safeGetDocs(queryRef: any) {
+  if (isServer) {
+    console.log(`[FirebaseService Server] safeGetDocs calling getDocsFromServer`);
+    return await getDocsFromServer(queryRef);
+  }
+  return await getDocs(queryRef);
+}
 
 // Helper to convert Dates to Timestamps recursively
 function convertDatesToTimestamps(obj: any): any {
@@ -125,8 +145,8 @@ export const FirebaseService = {
       await setDoc(docRef, preparedData);
       console.log(`[FirebaseService:${collectionName}:saveRecord] [Op:${operationId}] Write operation succeeded. Fetching to verify persistence...`);
 
-      // 5. Verify write operation by fetching from database
-      const verifiedSnap = await getDoc(docRef);
+            // 5. Verify write operation by fetching from database
+      const verifiedSnap = await safeGetDoc(docRef);
       if (!verifiedSnap.exists()) {
         throw new Error(`Write completed but document was not found immediately in collection '${collectionName}' with ID '${finalId}'`);
       }
@@ -163,7 +183,7 @@ export const FirebaseService = {
       await updateDoc(docRef, preparedData);
       console.log(`[FirebaseService:${collectionName}:updateRecord] [Op:${operationId}] Patch write completed. Fetching to verify...`);
 
-      const verifiedSnap = await getDoc(docRef);
+      const verifiedSnap = await safeGetDoc(docRef);
       const savedData = convertTimestampsToDates({ id: verifiedSnap.id, ...(verifiedSnap.data() as any || {}) });
       console.log(`[FirebaseService:${collectionName}:updateRecord] [Op:${operationId}] SUCCESS. Document patched and verified:`, savedData);
       return savedData;
@@ -186,7 +206,7 @@ export const FirebaseService = {
       }
 
       const docRef = doc(firestore, collectionName, id);
-      const snap = await getDoc(docRef);
+      const snap = await safeGetDoc(docRef);
       const backupData = snap.exists() ? convertTimestampsToDates({ id: snap.id, ...(snap.data() as any || {}) }) : { id };
 
       console.log(`[FirebaseService:${collectionName}:deleteRecord] [Op:${operationId}] Executing deleteDoc...`);
@@ -206,7 +226,7 @@ export const FirebaseService = {
     console.log(`[FirebaseService:${collectionName}:getRecord] Fetching ID: ${id}`);
     try {
       const docRef = doc(firestore, collectionName, id);
-      const snap = await getDoc(docRef);
+      const snap = await safeGetDoc(docRef);
       if (!snap.exists()) {
         console.warn(`[FirebaseService:${collectionName}:getRecord] Document with ID ${id} does not exist.`);
         return null;
@@ -229,7 +249,7 @@ export const FirebaseService = {
       if (filter) {
         q = fsQuery(collRef, fsWhere(filter.field, '==', filter.value));
       }
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any || {}) })).map(convertTimestampsToDates);
       console.log(`[FirebaseService:${collectionName}:listRecords] SUCCESS. Found ${items.length} documents.`);
       return items;

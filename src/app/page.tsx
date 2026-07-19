@@ -74,6 +74,91 @@ export default function Home() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [restoringSession, setRestoringSession] = useState(true)
 
+  // Estado de carregamento detalhado de clientes e membros para diagnóstico de conexão do Firestore
+  const [diagnosticLoading, setDiagnosticLoading] = useState({
+    loading: false,
+    clientsStatus: 'idle' as 'idle' | 'loading' | 'success' | 'error',
+    membersStatus: 'idle' as 'idle' | 'loading' | 'success' | 'error',
+    clientsCount: 0,
+    membersCount: 0,
+    clientsError: null as string | null,
+    membersError: null as string | null,
+  })
+
+  // Carregamento detalhado de clientes e membros para diagnóstico no Vercel/Firestore
+  useEffect(() => {
+    if (!user) return
+
+    const loadClientsAndMembers = async () => {
+      console.log("[Firestore Load Diagnostic] Iniciando carregamento detalhado de dados...")
+      setDiagnosticLoading(prev => ({
+        ...prev,
+        loading: true,
+        clientsStatus: 'loading',
+        membersStatus: 'loading',
+        clientsError: null,
+        membersError: null,
+      }))
+
+      // 1. Carregar Clientes
+      try {
+        console.log("[Firestore Load Diagnostic] Buscando 'clients' do Firestore via db.client...")
+        const clientsList = await db.client.findMany()
+        console.log(`[Firestore Load Diagnostic] Clientes carregados com sucesso! Total: ${clientsList.length}`)
+        setDiagnosticLoading(prev => ({
+          ...prev,
+          clientsStatus: 'success',
+          clientsCount: clientsList.length,
+        }))
+      } catch (error: any) {
+        const errorDetails = {
+          message: error?.message || String(error),
+          code: error?.code,
+          name: error?.name,
+          stack: error?.stack,
+        }
+        console.error("🚨 [Firestore Load Diagnostic] Erro de leitura ou permissão ao buscar CLIENTES:", errorDetails)
+        setDiagnosticLoading(prev => ({
+          ...prev,
+          clientsStatus: 'error',
+          clientsError: error?.message || String(error),
+        }))
+      }
+
+      // 2. Carregar Membros
+      try {
+        console.log("[Firestore Load Diagnostic] Buscando 'users' (membros) do Firestore via db.user...")
+        const membersList = await db.user.findMany()
+        console.log(`[Firestore Load Diagnostic] Membros carregados com sucesso! Total: ${membersList.length}`)
+        setDiagnosticLoading(prev => ({
+          ...prev,
+          membersStatus: 'success',
+          membersCount: membersList.length,
+        }))
+      } catch (error: any) {
+        const errorDetails = {
+          message: error?.message || String(error),
+          code: error?.code,
+          name: error?.name,
+          stack: error?.stack,
+        }
+        console.error("🚨 [Firestore Load Diagnostic] Erro de leitura ou permissão ao buscar MEMBROS (users):", errorDetails)
+        setDiagnosticLoading(prev => ({
+          ...prev,
+          membersStatus: 'error',
+          membersError: error?.message || String(error),
+        }))
+      } finally {
+        setDiagnosticLoading(prev => ({
+          ...prev,
+          loading: false,
+        }))
+      }
+    }
+
+    loadClientsAndMembers()
+  }, [user])
+
   // Persistir sessão e escutar estado do Firebase Auth
   useEffect(() => {
     let localSession: any = null;
@@ -245,6 +330,44 @@ export default function Home() {
           onLogout={handleLogout}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         />
+
+        {/* Barra de Status de Diagnóstico do Firestore */}
+        {(diagnosticLoading.loading || diagnosticLoading.clientsStatus === 'error' || diagnosticLoading.membersStatus === 'error') && (
+          <div className={`px-4 py-2 text-xs flex items-center justify-between border-b transition-colors shrink-0 ${
+            diagnosticLoading.clientsStatus === 'error' || diagnosticLoading.membersStatus === 'error'
+              ? 'bg-destructive/10 border-destructive/20 text-destructive'
+              : 'bg-muted/50 border-muted text-muted-foreground'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  diagnosticLoading.clientsStatus === 'error' || diagnosticLoading.membersStatus === 'error'
+                    ? 'bg-red-400'
+                    : 'bg-amber-400'
+                }`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                  diagnosticLoading.clientsStatus === 'error' || diagnosticLoading.membersStatus === 'error'
+                    ? 'bg-red-500'
+                    : 'bg-amber-500'
+                }`}></span>
+              </span>
+              <span className="font-semibold">Status Firestore:</span>
+              <span>
+                {diagnosticLoading.loading
+                  ? 'Diagnosticando leitura de clientes e membros...'
+                  : `Clientes: ${diagnosticLoading.clientsStatus === 'error' ? 'Erro de leitura (detalhes no console)' : `${diagnosticLoading.clientsCount} cadastrados`} | ` +
+                    `Membros: ${diagnosticLoading.membersStatus === 'error' ? 'Erro de leitura (detalhes no console)' : `${diagnosticLoading.membersCount} ativos`}`
+                }
+              </span>
+            </div>
+            {(diagnosticLoading.clientsStatus === 'error' || diagnosticLoading.membersStatus === 'error') && (
+              <div className="text-[10px] font-mono max-w-[50%] truncate hidden sm:block">
+                Erro: {diagnosticLoading.clientsError || diagnosticLoading.membersError}
+              </div>
+            )}
+          </div>
+        )}
+
         <main className="flex-1 overflow-y-auto">
           {view === 'dashboard' && (
             <DashboardView onOpenProcess={openProcess} onNavigate={navigate} />

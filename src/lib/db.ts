@@ -2,6 +2,8 @@ import {
   doc, 
   getDoc, 
   getDocs, 
+  getDocFromServer,
+  getDocsFromServer,
   setDoc, 
   updateDoc, 
   deleteDoc, 
@@ -16,6 +18,24 @@ import { firestore } from './firebase-init';
 import { FirebaseService } from './firebase-service';
 
 export { firestore };
+
+const isServer = typeof window === 'undefined';
+
+async function safeGetDoc(docRef: any): Promise<any> {
+  if (isServer) {
+    console.log(`[Firestore DB Server] safeGetDoc calling getDocFromServer: ${docRef.path}`);
+    return await getDocFromServer(docRef);
+  }
+  return await getDoc(docRef);
+}
+
+async function safeGetDocs(queryRef: any): Promise<any> {
+  if (isServer) {
+    console.log(`[Firestore DB Server] safeGetDocs calling getDocsFromServer`);
+    return await getDocsFromServer(queryRef);
+  }
+  return await getDocs(queryRef);
+}
 
 // Converte Timestamps do Firestore para instâncias de Date do Javascript
 function convertTimestampsToDates(obj: any): any {
@@ -310,7 +330,7 @@ async function resolveRelations(modelName: string, items: any[], include: any): 
           if (f === 'documents') col = 'document';
           
           try {
-            const snap = await getDocs(collection(firestore, col));
+            const snap = await safeGetDocs(collection(firestore, col));
             relationSnapshots[f] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           } catch (e) {
             relationSnapshots[f] = [];
@@ -339,7 +359,7 @@ async function resolveRelations(modelName: string, items: any[], include: any): 
 
     try {
       const q = collection(firestore, targetModel);
-      const targetSnapshot = await getDocs(q);
+      const targetSnapshot = await safeGetDocs(q);
       const targetItems = targetSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).map(convertTimestampsToDates);
 
       for (let i = 0; i < resolvedItems.length; i++) {
@@ -378,7 +398,7 @@ function createModelProxy(modelName: string) {
   return {
     async findMany(args: any = {}) {
       const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
 
       if (args.where) {
@@ -403,7 +423,7 @@ function createModelProxy(modelName: string) {
       const where = args.where || {};
       if (where.id) {
         const docRef = doc(firestore, modelName, where.id);
-        const docSnap = await getDoc(docRef);
+        const docSnap = await safeGetDoc(docRef);
         if (!docSnap.exists()) return null;
         let item = convertTimestampsToDates({ id: docSnap.id, ...(docSnap.data() || {}) });
         if (args.include) {
@@ -414,7 +434,7 @@ function createModelProxy(modelName: string) {
       }
 
       const q = buildFirestoreQuery(modelName, where);
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
       let matched = items.find(item => matchCriteria(item, where));
       if (!matched) return null;
@@ -427,7 +447,7 @@ function createModelProxy(modelName: string) {
 
     async findFirst(args: any = {}) {
       const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
 
       if (args.where) {
@@ -465,7 +485,7 @@ function createModelProxy(modelName: string) {
 
         if (!id) {
           const q = buildFirestoreQuery(modelName, where);
-          const snapshot = await getDocs(q);
+          const snapshot = await safeGetDocs(q);
           const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
           const matched = items.find(item => matchCriteria(item, where));
           if (!matched) {
@@ -490,7 +510,7 @@ function createModelProxy(modelName: string) {
 
         if (!id) {
           const q = buildFirestoreQuery(modelName, where);
-          const snapshot = await getDocs(q);
+          const snapshot = await safeGetDocs(q);
           const items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
           const matched = items.find(item => matchCriteria(item, where));
           if (!matched) {
@@ -511,7 +531,7 @@ function createModelProxy(modelName: string) {
       console.log(`[Firestore DB ${modelName}:deleteMany] Start batch delete on collection. Args:`, args);
       try {
         const q = buildFirestoreQuery(modelName, args.where);
-        const snapshot = await getDocs(q);
+        const snapshot = await safeGetDocs(q);
         let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
         if (args.where) {
           items = items.filter(item => matchCriteria(item, args.where));
@@ -538,7 +558,7 @@ function createModelProxy(modelName: string) {
         const rawData = convertDatesToTimestamps(args.data || {});
         const data = sanitizeFirestoreData(rawData);
         const q = buildFirestoreQuery(modelName, args.where);
-        const snapshot = await getDocs(q);
+        const snapshot = await safeGetDocs(q);
         let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
         if (args.where) {
           items = items.filter(item => matchCriteria(item, args.where));
@@ -562,7 +582,7 @@ function createModelProxy(modelName: string) {
 
     async count(args: any = {}) {
       const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
       if (args.where) {
         items = items.filter(item => matchCriteria(item, args.where));
@@ -572,7 +592,7 @@ function createModelProxy(modelName: string) {
 
     async aggregate(args: any = {}) {
       const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
       if (args.where) {
         items = items.filter(item => matchCriteria(item, args.where));
@@ -600,7 +620,7 @@ function createModelProxy(modelName: string) {
 
     async groupBy(args: any = {}) {
       const q = buildFirestoreQuery(modelName, args.where);
-      const snapshot = await getDocs(q);
+      const snapshot = await safeGetDocs(q);
       let items = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() || {}) })).map(convertTimestampsToDates);
       if (args.where) {
         items = items.filter(item => matchCriteria(item, args.where));
