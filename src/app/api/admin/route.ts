@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/admin - métricas do painel administrativo
@@ -60,7 +60,7 @@ export async function GET() {
     }),
   ])
 
-  return NextResponse.json({
+  return Response.json({
     resumo: {
       totalUsers,
       totalClients,

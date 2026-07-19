@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/contracts
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
 
@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
     include: { client: true, process: true, template: true },
     orderBy: { createdAt: 'desc' },
   })
-  return NextResponse.json(contracts)
+  return Response.json(contracts)
 }
 
 // POST /api/contracts - criar contrato a partir de template
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
 
   let content = ''
@@ -59,14 +59,14 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(contract, { status: 201 })
+  return Response.json(contract, { status: 201 })
 }
 
 // PATCH /api/contracts?id=xxx
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: Request) {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 })
 
   const body = await req.json()
 
@@ -92,12 +92,12 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
-    return NextResponse.json(contract)
+    return Response.json(contract)
   }
 
   const updated = await db.contract.update({
     where: { id },
     data: { ...body, acao: undefined, assinantes: undefined },
   })
-  return NextResponse.json(updated)
+  return Response.json(updated)
 }

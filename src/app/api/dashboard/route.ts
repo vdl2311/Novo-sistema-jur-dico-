@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 async function safeQuery<T>(promise: Promise<T>, fallback: T): Promise<T> {
@@ -165,7 +165,7 @@ export async function GET() {
     where: { status: 'Ativo' },
   }), [])
 
-  return NextResponse.json({
+  return Response.json({
     hoje: inicioHoje.toISOString(),
     resumo: {
       processosAtivos,

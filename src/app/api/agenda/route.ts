@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/agenda - agenda jurídica (combina prazos + audiências + tarefas)
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const inicio = searchParams.get('inicio')
   const fim = searchParams.get('fim')
@@ -57,5 +57,5 @@ export async function GET(req: NextRequest) {
     })),
   ]
 
-  return NextResponse.json({ eventos, inicio: inicioDate, fim: fimDate })
+  return Response.json({ eventos, inicio: inicioDate, fim: fimDate })
 }

@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/reports?type=clientes|processos|financeiro|custas|honorarios|audiencias|produtividade|advogados|tribunal|area
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type') || 'processos'
   const inicio = searchParams.get('inicio')
@@ -217,5 +217,5 @@ export async function GET(req: NextRequest) {
       resultado = { error: 'Tipo de relatório inválido' }
   }
 
-  return NextResponse.json(resultado)
+  return Response.json(resultado)
 }

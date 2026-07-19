@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // GET /api/knowledge - lista artigos com busca
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search') || ''
   const category = searchParams.get('category') || ''
@@ -27,11 +27,11 @@ export async function GET(req: NextRequest) {
     orderBy: { updatedAt: 'desc' },
   })
 
-  return NextResponse.json(articles)
+  return Response.json(articles)
 }
 
 // POST /api/knowledge - criar artigo
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const article = await db.knowledgeArticle.create({
     data: {
@@ -60,16 +60,16 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(article, { status: 201 })
+  return Response.json(article, { status: 201 })
 }
 
 // POST /api/knowledge/summarize - gera resumo com IA
-export async function PUT(req: NextRequest) {
+export async function PUT(req: Request) {
   const body = await req.json()
   const { articleId } = body
 
   const article = await db.knowledgeArticle.findUnique({ where: { id: articleId } })
-  if (!article) return NextResponse.json({ error: 'Artigo não encontrado' }, { status: 404 })
+  if (!article) return Response.json({ error: 'Artigo não encontrado' }, { status: 404 })
 
   try {
     const zai = await ZAI.create()
@@ -96,8 +96,8 @@ ${article.content}`,
       data: { summary },
     })
 
-    return NextResponse.json({ ...updated, summary })
+    return Response.json({ ...updated, summary })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return Response.json({ error: error.message }, { status: 500 })
   }
 }

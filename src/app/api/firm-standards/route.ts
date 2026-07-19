@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/firm-standards
@@ -8,11 +8,11 @@ export async function GET() {
     where: { active: true },
     orderBy: { category: 'asc' },
   })
-  return NextResponse.json(standards)
+  return Response.json(standards)
 }
 
 // POST /api/firm-standards
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const std = await db.firmStandard.create({
     data: {
@@ -22,5 +22,5 @@ export async function POST(req: NextRequest) {
       description: body.description || null,
     },
   })
-  return NextResponse.json(std, { status: 201 })
+  return Response.json(std, { status: 201 })
 }

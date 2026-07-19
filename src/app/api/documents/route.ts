@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/documents - lista documentos com filtros
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const clienteId = searchParams.get('clienteId')
   const processoId = searchParams.get('processoId')
@@ -17,11 +17,11 @@ export async function GET(req: NextRequest) {
     include: { client: true, process: true },
     orderBy: { createdAt: 'desc' },
   })
-  return NextResponse.json(docs)
+  return Response.json(docs)
 }
 
 // POST /api/documents - registrar upload de documento (simulado)
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const doc = await db.document.create({
     data: {
@@ -58,5 +58,5 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(doc, { status: 201 })
+  return Response.json(doc, { status: 201 })
 }

@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/financial
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type') // Receita, Despesa
   const status = searchParams.get('status')
@@ -18,11 +18,11 @@ export async function GET(req: NextRequest) {
     orderBy: { dueDate: 'desc' },
   })
 
-  return NextResponse.json(items)
+  return Response.json(items)
 }
 
 // POST /api/financial
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const fin = await db.financial.create({
     data: {
@@ -48,14 +48,14 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(fin, { status: 201 })
+  return Response.json(fin, { status: 201 })
 }
 
 // PATCH /api/financial?id=xxx
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: Request) {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 })
 
   const body = await req.json()
   const updated = await db.financial.update({
@@ -68,5 +68,5 @@ export async function PATCH(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(updated)
+  return Response.json(updated)
 }

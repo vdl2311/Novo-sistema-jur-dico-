@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/time
@@ -8,11 +8,11 @@ export async function GET() {
     include: { process: true, client: true },
     orderBy: { date: 'desc' },
   })
-  return NextResponse.json(items)
+  return Response.json(items)
 }
 
 // POST /api/time
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const item = await db.timeEntry.create({
     data: {
@@ -25,5 +25,5 @@ export async function POST(req: NextRequest) {
       clientId: body.clientId || null,
     },
   })
-  return NextResponse.json(item, { status: 201 })
+  return Response.json(item, { status: 201 })
 }

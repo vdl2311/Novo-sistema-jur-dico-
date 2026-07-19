@@ -1,14 +1,14 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/portal?token=xxx - Portal do cliente (acesso via token)
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const token = searchParams.get('token')
 
   if (!token) {
-    return NextResponse.json({ error: 'Token necessário' }, { status: 401 })
+    return Response.json({ error: 'Token necessário' }, { status: 401 })
   }
 
   const client = await db.client.findFirst({ where: { portalToken: token } })
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   if (!cliente) {
     // Return mock data for demo purposes if no clients exist at all
-    return NextResponse.json({
+    return Response.json({
       cliente: {
         id: 'mock-1',
         name: 'Cliente Demonstração',
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  return NextResponse.json({
+  return Response.json({
     cliente: {
       id: cliente.id,
       name: cliente.name,

@@ -1,17 +1,17 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import { consultarProcessoDataJud, simularRespostaDataJud, extrairTribunalDoCNJ } from '@/lib/datajud'
 
 // POST /api/datajud/sync
 // Body: { processId: "xxx", demo?: boolean }
 // Sincroniza andamentos do DataJud com o processo no banco local
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const processId: string = body.processId
 
   if (!processId) {
-    return NextResponse.json({ error: 'processId é obrigatório' }, { status: 400 })
+    return Response.json({ error: 'processId é obrigatório' }, { status: 400 })
   }
 
   const proc = await db.process.findUnique({
@@ -20,18 +20,18 @@ export async function POST(req: NextRequest) {
   })
 
   if (!proc) {
-    return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 })
+    return Response.json({ error: 'Processo não encontrado' }, { status: 404 })
   }
 
   if (!proc.cnj) {
-    return NextResponse.json({
+    return Response.json({
       error: 'Processo não possui número CNJ cadastrado. Atualize o processo com o CNJ antes de sincronizar.',
     }, { status: 400 })
   }
 
   const info = extrairTribunalDoCNJ(proc.cnj)
   if (!info) {
-    return NextResponse.json({
+    return Response.json({
       error: 'Não foi possível identificar o tribunal a partir do CNJ.',
     }, { status: 400 })
   }
@@ -54,13 +54,13 @@ export async function POST(req: NextRequest) {
         resultado = simularRespostaDataJud(proc.cnj)
         resultado.aviso = `Erro de conexão com DataJud - usando dados simulados.`
       } else {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return Response.json({ error: error.message }, { status: 500 })
       }
     }
   }
 
   if (!resultado.encontrado || !resultado.movimentos) {
-    return NextResponse.json({
+    return Response.json({
       sincronizado: false,
       mensagem: 'Processo não encontrado no DataJud ou sem movimentos.',
       cnj: proc.cnj,
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  return NextResponse.json({
+  return Response.json({
     sincronizado: true,
     processo: proc.title,
     cnj: proc.cnj,

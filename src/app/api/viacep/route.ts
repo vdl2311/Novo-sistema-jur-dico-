@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 
 // GET /api/viacep?cep=00000000 - Integração ViaCEP
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const cep = (searchParams.get('cep') || '').replace(/\D/g, '')
 
   if (!cep || cep.length !== 8) {
-    return NextResponse.json({ error: 'CEP inválido. Use 8 dígitos.' }, { status: 400 })
+    return Response.json({ error: 'CEP inválido. Use 8 dígitos.' }, { status: 400 })
   }
 
   try {
@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
     const data = await res.json()
 
     if (data.erro) {
-      return NextResponse.json({ error: 'CEP não encontrado' }, { status: 404 })
+      return Response.json({ error: 'CEP não encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json({
+    return Response.json({
       cep: data.cep,
       logradouro: data.logradouro,
       complemento: data.complemento,
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error('ViaCEP error:', error)
-    return NextResponse.json(
+    return Response.json(
       { error: 'Erro ao consultar ViaCEP. Tente novamente.' },
       { status: 500 }
     )

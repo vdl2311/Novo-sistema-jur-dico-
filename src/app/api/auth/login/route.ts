@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // POST /api/auth/login - Login simples (simulação)
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const { email, password, twoFactorCode } = await req.json()
 
   let user = await db.user.findUnique({ where: { email } })
@@ -22,15 +22,15 @@ export async function POST(req: NextRequest) {
   }
 
   if (!user) {
-    return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 })
+    return Response.json({ error: 'Credenciais inválidas' }, { status: 401 })
   }
 
   if (password !== 'demo123' && password !== '123456' && password !== user.password) {
-    return NextResponse.json({ error: 'Senha incorreta' }, { status: 401 })
+    return Response.json({ error: 'Senha incorreta' }, { status: 401 })
   }
 
   if (user.twoFactorEnabled && twoFactorCode !== '123456') {
-    return NextResponse.json({
+    return Response.json({
       requires2FA: true,
       message: 'Código 2FA enviado para seu e-mail. Use 123456 para demo.',
     }, { status: 200 })
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({
+  return Response.json({
     user: {
       id: user.id,
       name: user.name,

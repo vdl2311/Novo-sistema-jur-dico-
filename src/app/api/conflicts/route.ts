@@ -1,15 +1,15 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // POST /api/conflicts - verifica conflito de interesse
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const searchText: string = (body.searchText || '').toLowerCase().trim()
   const clientName = body.clientName || ''
 
   if (!searchText) {
-    return NextResponse.json({ error: 'Texto de busca necessário' }, { status: 400 })
+    return Response.json({ error: 'Texto de busca necessário' }, { status: 400 })
   }
 
   // Buscar em clientes, processos e partes
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({
+  return Response.json({
     found,
     totalMatches: matches.length,
     matches,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
 // GET /api/conflicts - histórico
 export async function GET() {
   const checks = await db.conflictCheck.findMany({ orderBy: { checkedAt: 'desc' }, take: 30 })
-  return NextResponse.json(
+  return Response.json(
     checks.map((c) => ({ ...c, matches: c.matches ? JSON.parse(c.matches) : [] }))
   )
 }

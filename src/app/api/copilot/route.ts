@@ -1,17 +1,17 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/copilot
 // Copiloto Jurídico - chat com IA que consulta os dados do escritório (RAG básico)
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const pergunta: string = (body.pergunta || '').trim()
   const historico: { role: string; content: string }[] = body.historico || []
 
   if (!pergunta) {
-    return NextResponse.json({ error: 'Pergunta é obrigatória' }, { status: 400 })
+    return Response.json({ error: 'Pergunta é obrigatória' }, { status: 400 })
   }
 
   // Coletar dados relevantes do escritório para o contexto (RAG simples)
@@ -122,13 +122,13 @@ ${contexto}`
       },
     })
 
-    return NextResponse.json({
+    return Response.json({
       resposta,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Erro no copiloto:', error)
-    return NextResponse.json(
+    return Response.json(
       {
         error: 'Erro ao processar pergunta',
         resposta:

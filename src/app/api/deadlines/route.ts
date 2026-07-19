@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/deadlines - lista de prazos com filtros
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const periodo = searchParams.get('periodo') || 'todos' // hoje, 7dias, 30dias, todos
   const done = searchParams.get('done')
@@ -39,11 +39,11 @@ export async function GET(req: NextRequest) {
     orderBy: { dueDate: 'asc' },
   })
 
-  return NextResponse.json(deadlines)
+  return Response.json(deadlines)
 }
 
 // POST /api/deadlines
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const deadline = await db.deadline.create({
     data: {
@@ -77,14 +77,14 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(deadline, { status: 201 })
+  return Response.json(deadline, { status: 201 })
 }
 
 // PATCH /api/deadlines?id=xxx
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: Request) {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 })
 
   const body = await req.json()
   // Mapear campos permitidos
@@ -99,5 +99,5 @@ export async function PATCH(req: NextRequest) {
     data: allowedFields,
   })
 
-  return NextResponse.json(updated)
+  return Response.json(updated)
 }

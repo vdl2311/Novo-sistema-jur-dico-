@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+
 import { db } from '@/lib/db';
 
 export async function GET() {
@@ -768,9 +768,9 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ success: true, message: 'Firestore seeded successfully!' });
+    return Response.json({ success: true, message: 'Firestore seeded successfully!' });
   } catch (error: any) {
     console.error('Error seeding Firestore:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import { consultarProcessoDataJud, simularRespostaDataJud, extrairTribunalDoCNJ } from '@/lib/datajud'
 
@@ -22,7 +22,7 @@ import { consultarProcessoDataJud, simularRespostaDataJud, extrairTribunalDoCNJ 
 
 const CRON_SECRET = process.env.CRON_SECRET || 'jusflow-cron-secret-2026'
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   // Verificação de segurança (pode ser bypassada em dev)
   const authHeader = req.headers.get('authorization')
   const url = new URL(req.url)
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     process.env.NODE_ENV !== 'production'
 
   if (!isAuthorized) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return Response.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
   const body = await req.json().catch(() => ({}))
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (processos.length === 0) {
-    return NextResponse.json({
+    return Response.json({
       sincronizado: true,
       mensagem: 'Nenhum processo ativo com CNJ encontrado.',
       total: 0,
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({
+  return Response.json({
     sincronizado: true,
     timestamp: new Date().toISOString(),
     modo: usarDemo ? 'demo' : 'real',
@@ -243,7 +243,7 @@ export async function GET() {
     take: 10,
   })
 
-  return NextResponse.json({
+  return Response.json({
     ultimoSync: ultimoLog
       ? {
           data: ultimoLog.createdAt,

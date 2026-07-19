@@ -1,17 +1,17 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/automations
 export async function GET() {
   const autos = await db.automation.findMany({ orderBy: { createdAt: 'desc' } })
-  return NextResponse.json(
+  return Response.json(
     autos.map((a) => ({ ...a, actions: JSON.parse(a.actions) }))
   )
 }
 
 // POST /api/automations
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const auto = await db.automation.create({
     data: {
@@ -21,14 +21,14 @@ export async function POST(req: NextRequest) {
       enabled: body.enabled !== false,
     },
   })
-  return NextResponse.json({ ...auto, actions: JSON.parse(auto.actions) }, { status: 201 })
+  return Response.json({ ...auto, actions: JSON.parse(auto.actions) }, { status: 201 })
 }
 
 // PATCH /api/automations?id=xxx
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: Request) {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 })
   const body = await req.json()
   const allowedFields: Record<string, unknown> = {}
   for (const f of ['name', 'trigger', 'enabled']) {
@@ -40,17 +40,17 @@ export async function PATCH(req: NextRequest) {
     where: { id },
     data: allowedFields,
   })
-  return NextResponse.json({ ...updated, actions: JSON.parse(updated.actions) })
+  return Response.json({ ...updated, actions: JSON.parse(updated.actions) })
 }
 
 // POST /api/automations?id=xxx/executar - simula execução de automação
-export async function PUT(req: NextRequest) {
+export async function PUT(req: Request) {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!id) return Response.json({ error: 'id required' }, { status: 400 })
 
   const auto = await db.automation.findUnique({ where: { id } })
-  if (!auto) return NextResponse.json({ error: 'não encontrada' }, { status: 404 })
+  if (!auto) return Response.json({ error: 'não encontrada' }, { status: 404 })
 
   const actions = JSON.parse(auto.actions)
   const resultados: string[] = []
@@ -93,7 +93,7 @@ export async function PUT(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({
+  return Response.json({
     automacao: auto.name,
     acoesExecutadas: resultados.length,
     resultados,

@@ -1,22 +1,22 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import { consultarProcessoDataJud, simularRespostaDataJud, extrairTribunalDoCNJ, TRIBUNAIS } from '@/lib/datajud'
 
 // POST /api/datajud/search
 // Body: { cnj: "0000000-00.0000.0.00.0000", demo?: boolean }
 // Consulta processo no DataJud do CNJ
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const cnj: string = (body.cnj || '').trim()
 
   if (!cnj) {
-    return NextResponse.json({ error: 'CNJ é obrigatório' }, { status: 400 })
+    return Response.json({ error: 'CNJ é obrigatório' }, { status: 400 })
   }
 
   const info = extrairTribunalDoCNJ(cnj)
   if (!info) {
-    return NextResponse.json({
+    return Response.json({
       error: 'Não foi possível identificar o tribunal a partir do CNJ. Verifique o número.'
     }, { status: 400 })
   }
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   if (usarDemo) {
     const resultado = simularRespostaDataJud(cnj)
-    return NextResponse.json({
+    return Response.json({
       ...resultado,
       aviso: 'Modo demonstração - dados simulados. Em ambiente com acesso ao CNJ, retornará dados reais do DataJud.',
     })
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json(resultado)
+    return Response.json(resultado)
   } catch (error: any) {
     console.error('Erro DataJud:', error.message)
 
@@ -58,14 +58,14 @@ export async function POST(req: NextRequest) {
 
     if (ehErroConexao) {
       const demo = simularRespostaDataJud(cnj)
-      return NextResponse.json({
+      return Response.json({
         ...demo,
         aviso: `⚠️ Não foi possível conectar à API do DataJud (${error.message}). Retornando dados de demonstração. Em produção, isto traria dados reais do tribunal.`,
         erroConexao: true,
       })
     }
 
-    return NextResponse.json(
+    return Response.json(
       {
         error: error.message,
         tribunal: info.tribunal,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
 // GET /api/datajud/tribunais - lista de tribunais suportados
 export async function GET() {
-  return NextResponse.json(
+  return Response.json(
     Object.entries(TRIBUNAIS).map(([sigla, info]) => ({
       sigla,
       nome: info.nome,

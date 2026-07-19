@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // POST /api/processes/[id]/movements - adicionar andamento
 export async function POST(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -17,11 +17,11 @@ export async function POST(
   })
 
   if (!proc) {
-    return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 })
+    return Response.json({ error: 'Processo não encontrado' }, { status: 404 })
   }
 
   if (!body.description || !body.description.trim()) {
-    return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 })
+    return Response.json({ error: 'Descrição é obrigatória' }, { status: 400 })
   }
 
   const mov = await db.movement.create({
@@ -57,5 +57,5 @@ export async function POST(
     },
   })
 
-  return NextResponse.json(mov, { status: 201 })
+  return Response.json(mov, { status: 201 })
 }

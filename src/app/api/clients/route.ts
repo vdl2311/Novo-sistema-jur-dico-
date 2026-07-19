@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/clients - lista com filtros opcionais
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || ''
@@ -28,11 +28,11 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   })
 
-  return NextResponse.json(clients)
+  return Response.json(clients)
 }
 
 // POST /api/clients - criar
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const client = await db.client.create({
     data: {
@@ -62,5 +62,5 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(client, { status: 201 })
+  return Response.json(client, { status: 201 })
 }

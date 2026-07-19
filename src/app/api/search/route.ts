@@ -1,14 +1,14 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/search?q=...
 // Busca global: clientes, processos, tarefas, prazos, documentos, financeiro
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const q = (searchParams.get('q') || '').trim().toLowerCase()
   if (!q || q.length < 2) {
-    return NextResponse.json({ results: [] })
+    return Response.json({ results: [] })
   }
 
   const [clients, processes, tasks, deadlines, financials, documents] = await Promise.all([
@@ -107,5 +107,5 @@ export async function GET(req: NextRequest) {
     })),
   ]
 
-  return NextResponse.json({ results, total: results.length })
+  return Response.json({ results, total: results.length })
 }

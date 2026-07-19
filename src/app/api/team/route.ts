@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import { adminAuth, isFirebaseAdminAvailable } from '@/lib/firebase-admin'
 
@@ -19,11 +19,11 @@ export async function GET() {
     },
     orderBy: { createdAt: 'desc' },
   })
-  return NextResponse.json(users)
+  return Response.json(users)
 }
 
 // POST /api/team
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json()
     
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           try {
             firebaseUser = await adminAuth.getUserByEmail(body.email)
           } catch (getErr: any) {
-            return NextResponse.json({ error: `Erro ao obter usuário existente no Firebase: ${getErr.message}` }, { status: 400 })
+            return Response.json({ error: `Erro ao obter usuário existente no Firebase: ${getErr.message}` }, { status: 400 })
           }
         } else if (isApiDisabled) {
           console.warn("Firebase Auth Identity Toolkit API not enabled/available. Creating fallback Firestore-only user.");
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
             firebaseUser = { uid: `fallback_${Math.random().toString(36).substring(2, 15)}` }
           }
         } else {
-          return NextResponse.json({ error: `Erro ao criar usuário no Firebase Auth: ${err.message}` }, { status: 400 })
+          return Response.json({ error: `Erro ao criar usuário no Firebase Auth: ${err.message}` }, { status: 400 })
         }
       }
     }
@@ -102,10 +102,10 @@ export async function POST(req: NextRequest) {
         details: `Usuário convidado e criado: ${user.name} (${user.role})`,
       },
     })
-    return NextResponse.json(user, { status: 201 })
+    return Response.json(user, { status: 201 })
   } catch (err: any) {
     console.error("Erro ao convidar usuário (POST /api/team):", err);
-    return NextResponse.json({ 
+    return Response.json({ 
       error: `Erro no servidor ao convidar usuário: ${err.message || err}`,
       stack: err.stack 
     }, { status: 500 })
@@ -113,11 +113,11 @@ export async function POST(req: NextRequest) {
 }
 
 // PATCH /api/team?id=xxx
-export async function PATCH(req: NextRequest) {
+export async function PATCH(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+    if (!id) return Response.json({ error: 'id required' }, { status: 400 })
     const body = await req.json()
 
     // Sincroniza e-mail ou nome alterados com o Firebase Auth
@@ -146,19 +146,19 @@ export async function PATCH(req: NextRequest) {
       where: { id },
       data: allowedFields,
     })
-    return NextResponse.json(updated)
+    return Response.json(updated)
   } catch (err: any) {
     console.error("Erro ao atualizar usuário (PATCH /api/team):", err);
-    return NextResponse.json({ error: `Erro no servidor ao atualizar usuário: ${err.message || err}` }, { status: 500 })
+    return Response.json({ error: `Erro no servidor ao atualizar usuário: ${err.message || err}` }, { status: 500 })
   }
 }
 
 // DELETE /api/team?id=xxx
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+    if (!id) return Response.json({ error: 'id required' }, { status: 400 })
     
     // Deleta o usuário do Firebase Auth
     if (isFirebaseAdminAvailable && adminAuth && !id.startsWith('fallback_')) {
@@ -170,9 +170,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     await db.user.delete({ where: { id } })
-    return NextResponse.json({ ok: true })
+    return Response.json({ ok: true })
   } catch (err: any) {
     console.error("Erro ao deletar usuário (DELETE /api/team):", err);
-    return NextResponse.json({ error: `Erro no servidor ao deletar usuário: ${err.message || err}` }, { status: 500 })
+    return Response.json({ error: `Erro no servidor ao deletar usuário: ${err.message || err}` }, { status: 500 })
   }
 }

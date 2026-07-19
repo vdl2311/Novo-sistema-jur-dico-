@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/processes/[id] - detalhe completo com timeline
 export async function GET(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -21,7 +21,7 @@ export async function GET(
     },
   })
 
-  if (!proc) return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 })
+  if (!proc) return Response.json({ error: 'Processo não encontrado' }, { status: 404 })
 
   // Timeline unificada: combina movimentos + prazos + tarefas + financeiros em ordem cronológica
   const timeline: {
@@ -71,12 +71,12 @@ export async function GET(
 
   timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-  return NextResponse.json({ ...proc, timeline })
+  return Response.json({ ...proc, timeline })
 }
 
 // PATCH /api/processes/[id]
 export async function PATCH(
-  req: NextRequest,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -108,7 +108,7 @@ export async function PATCH(
     },
   })
 
-  return NextResponse.json(proc)
+  return Response.json(proc)
 }
 
 // POST removido - use /api/processes/[id]/movements para adicionar andamentos

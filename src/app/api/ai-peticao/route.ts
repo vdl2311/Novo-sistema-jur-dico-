@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/ai-peticao - Geração de petições com IA
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const tipo = body.tipo || 'inicial' // inicial, contestacao, replica, alegacoes_finais, recursal
   const processoId = body.processoId
@@ -96,14 +96,14 @@ Se faltarem dados essenciais, use placeholders entre colchetes [como este] para 
       },
     })
 
-    return NextResponse.json({
+    return Response.json({
       tipo: tiposPeticao[tipo],
       conteudo: peticao,
       geradoEm: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Erro IA petição:', error)
-    return NextResponse.json(
+    return Response.json(
       { error: 'Erro ao gerar petição', conteudo: '' },
       { status: 500 }
     )

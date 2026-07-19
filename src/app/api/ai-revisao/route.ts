@@ -1,14 +1,14 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/ai-revisao - Revisão jurídica de textos
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const texto: string = (body.texto || '').trim()
 
   if (!texto) {
-    return NextResponse.json({ error: 'Texto é obrigatório' }, { status: 400 })
+    return Response.json({ error: 'Texto é obrigatório' }, { status: 400 })
   }
 
   const prompt = `Você é um revisor jurídico brasileiro especializado. Revise o texto jurídico abaixo e forneça:
@@ -43,13 +43,13 @@ Responda em português brasileiro, formato Markdown estruturado.`
 
     const revisao = completion.choices[0]?.message?.content || ''
 
-    return NextResponse.json({
+    return Response.json({
       revisao,
       geradoEm: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Erro IA revisão:', error)
-    return NextResponse.json(
+    return Response.json(
       { error: 'Erro ao processar revisão', revisao: '' },
       { status: 500 }
     )

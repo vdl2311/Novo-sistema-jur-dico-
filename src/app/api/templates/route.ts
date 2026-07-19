@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/templates
@@ -8,7 +8,7 @@ export async function GET() {
     include: { _count: { select: { contracts: true } } },
     orderBy: { createdAt: 'desc' },
   })
-  return NextResponse.json(
+  return Response.json(
     templates.map((t) => ({
       ...t,
       variables: t.variables ? JSON.parse(t.variables) : [],
@@ -17,7 +17,7 @@ export async function GET() {
 }
 
 // POST /api/templates
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const tpl = await db.contractTemplate.create({
     data: {
@@ -27,5 +27,5 @@ export async function POST(req: NextRequest) {
       variables: JSON.stringify(body.variables || []),
     },
   })
-  return NextResponse.json(tpl, { status: 201 })
+  return Response.json(tpl, { status: 201 })
 }

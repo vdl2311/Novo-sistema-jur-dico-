@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // GET /api/compliance - lista regras de conformidade
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const category = searchParams.get('category')
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     take: 20,
   })
 
-  return NextResponse.json({
+  return Response.json({
     rules: rules.map((r) => ({
       ...r,
       checksCount: r._count.checks,
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/compliance - criar regra
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const rule = await db.complianceRule.create({
     data: {
@@ -47,17 +47,17 @@ export async function POST(req: NextRequest) {
       enabled: body.enabled !== false,
     },
   })
-  return NextResponse.json(rule, { status: 201 })
+  return Response.json(rule, { status: 201 })
 }
 
 // POST /api/compliance/check - verifica conformidade de uma entidade contra todas as regras
 // Body: { entityType, entityId, entityName, content, type? }
-export async function PUT(req: NextRequest) {
+export async function PUT(req: Request) {
   const body = await req.json()
   const { entityType, entityId, entityName, content, type } = body
 
   if (!content || !entityType) {
-    return NextResponse.json({ error: 'entityType e content são obrigatórios' }, { status: 400 })
+    return Response.json({ error: 'entityType e content são obrigatórios' }, { status: 400 })
   }
 
   // Filtra regras por categoria se type fornecido
@@ -156,7 +156,7 @@ Se não houver violação: {"passed": true, "violations": [], "notes": "Conforme
     },
   })
 
-  return NextResponse.json({
+  return Response.json({
     entityType,
     entityId,
     entityName,

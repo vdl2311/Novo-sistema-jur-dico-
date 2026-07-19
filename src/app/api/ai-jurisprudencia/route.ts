@@ -1,15 +1,15 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/ai-jurisprudencia - Sugestão de jurisprudência
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const tema: string = (body.tema || '').trim()
   const area = body.area || 'Geral'
 
   if (!tema) {
-    return NextResponse.json({ error: 'Tema é obrigatório' }, { status: 400 })
+    return Response.json({ error: 'Tema é obrigatório' }, { status: 400 })
   }
 
   const prompt = `Você é um advogado brasileiro especialista em pesquisa jurisprudencial. Para o tema "${tema}" na área ${area}, forneça:
@@ -40,7 +40,7 @@ Responda em português brasileiro, formato Markdown.`
 
     const jurisprudencia = completion.choices[0]?.message?.content || ''
 
-    return NextResponse.json({
+    return Response.json({
       tema,
       area,
       jurisprudencia,
@@ -49,7 +49,7 @@ Responda em português brasileiro, formato Markdown.`
     })
   } catch (error) {
     console.error('Erro IA jurisprudência:', error)
-    return NextResponse.json(
+    return Response.json(
       { error: 'Erro ao sugerir jurisprudência', jurisprudencia: '' },
       { status: 500 }
     )

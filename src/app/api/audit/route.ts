@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/audit - logs de auditoria
@@ -8,5 +8,5 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     take: 100,
   })
-  return NextResponse.json(logs)
+  return Response.json(logs)
 }

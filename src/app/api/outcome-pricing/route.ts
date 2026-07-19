@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/outcome-pricing
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const area = searchParams.get('area')
 
@@ -11,11 +11,11 @@ export async function GET(req: NextRequest) {
   if (area && area !== 'Todas') where.area = area
 
   const pricing = await db.outcomePricing.findMany({ where, orderBy: { area: 'asc' } })
-  return NextResponse.json(pricing)
+  return Response.json(pricing)
 }
 
 // POST /api/outcome-pricing
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const pricing = await db.outcomePricing.create({
     data: {
@@ -27,5 +27,5 @@ export async function POST(req: NextRequest) {
       area: body.area || 'Geral',
     },
   })
-  return NextResponse.json(pricing, { status: 201 })
+  return Response.json(pricing, { status: 201 })
 }

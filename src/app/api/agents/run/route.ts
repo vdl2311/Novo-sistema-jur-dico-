@@ -1,26 +1,26 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/agents/run
 // Executa um agente com Supervisory AI (segunda IA que valida o output)
 // Body: { agentId, task, input?, processId?, clientId? }
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const { agentId, task, input, processId, clientId } = body
 
   if (!agentId || !task) {
-    return NextResponse.json({ error: 'agentId e task são obrigatórios' }, { status: 400 })
+    return Response.json({ error: 'agentId e task são obrigatórios' }, { status: 400 })
   }
 
   const agent = await db.agent.findUnique({ where: { id: agentId } })
   if (!agent) {
-    return NextResponse.json({ error: 'Agente não encontrado' }, { status: 404 })
+    return Response.json({ error: 'Agente não encontrado' }, { status: 404 })
   }
 
   if (agent.status !== 'Ativo') {
-    return NextResponse.json({ error: `Agente ${agent.status}` }, { status: 400 })
+    return Response.json({ error: `Agente ${agent.status}` }, { status: 400 })
   }
 
   // Criar registro de execução pendente
@@ -172,7 +172,7 @@ Verifique e responda:
           },
         })
 
-        return NextResponse.json({
+        return Response.json({
           runId: run.id,
           status: 'Rejeitado',
           output: agentOutput,
@@ -210,7 +210,7 @@ Verifique e responda:
       },
     })
 
-    return NextResponse.json({
+    return Response.json({
       runId: run.id,
       status: 'Concluído',
       agent: agent.name,
@@ -232,7 +232,7 @@ Verifique e responda:
         duration: Date.now() - startTime,
       },
     })
-    return NextResponse.json(
+    return Response.json(
       { error: error.message, runId: run.id, status: 'Erro' },
       { status: 500 }
     )
@@ -240,7 +240,7 @@ Verifique e responda:
 }
 
 // GET /api/agents/run - histórico de execuções
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const agentId = searchParams.get('agentId')
   const limit = parseInt(searchParams.get('limit') || '20')
@@ -255,5 +255,5 @@ export async function GET(req: NextRequest) {
     take: limit,
   })
 
-  return NextResponse.json(runs)
+  return Response.json(runs)
 }

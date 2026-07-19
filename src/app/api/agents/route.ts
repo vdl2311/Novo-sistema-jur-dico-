@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
 
@@ -34,11 +34,11 @@ export async function GET() {
     })
   )
 
-  return NextResponse.json(agentsWithStats)
+  return Response.json(agentsWithStats)
 }
 
 // POST /api/agents - criar novo agente
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const agent = await db.agent.create({
     data: {
@@ -63,5 +63,5 @@ export async function POST(req: NextRequest) {
       details: `Agente criado: ${agent.name}`,
     },
   })
-  return NextResponse.json(agent, { status: 201 })
+  return Response.json(agent, { status: 201 })
 }

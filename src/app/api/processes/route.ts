@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
 
 // GET /api/processes - lista de processos com filtros
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || ''
@@ -31,11 +31,11 @@ export async function GET(req: NextRequest) {
     orderBy: { updatedAt: 'desc' },
   })
 
-  return NextResponse.json(processes)
+  return Response.json(processes)
 }
 
 // POST /api/processes - criar novo processo
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json()
   const proc = await db.process.create({
     data: {
@@ -88,5 +88,5 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json(proc, { status: 201 })
+  return Response.json(proc, { status: 201 })
 }
