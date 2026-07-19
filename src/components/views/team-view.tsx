@@ -159,8 +159,9 @@ export function TeamView() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {users.map((u) => {
-            const perms = u.permissions === 'all' ? ['Todas'] : (u.permissions || '').split(',').filter(Boolean)
-            const initials = u.name.split(' ').slice(0, 2).map((p) => p[0]).join('')
+            const permsArray = Array.isArray(u.permissions) ? u.permissions : (u.permissions || '').split(',').filter(Boolean)
+            const perms = permsArray.length === 1 && (permsArray[0].toLowerCase() === 'all') ? ['Todas'] : permsArray
+            const initials = (u.name || '').split(' ').slice(0, 2).map((p) => p[0]).join('')
             return (
               <Card key={u._id || u.id}>
                 <CardContent className="p-4">
