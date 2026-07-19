@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 import { MaskedInput } from '@/components/ui/masked-input'
 import { useTeamInvite } from "@/hooks/use-team-invite"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface User {
   id: string
@@ -250,7 +251,7 @@ function NewUserModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] sm:max-w-lg">
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Convidar membro da equipe</DialogTitle>
           <DialogDescription>Um convite será enviado por e-mail. A senha padrão é &quot;demo123&quot;.</DialogDescription>
@@ -288,14 +289,13 @@ function NewUserModal({
             <Label>Permissões de acesso</Label>
             <div className="grid grid-cols-2 gap-2">
               {ALL_PERMISSIONS.map((p) => (
-                <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-accent">
-                  <input
-                    type="checkbox"
+                <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-accent select-none">
+                  <Checkbox
+                    id={`perm-${p.id}`}
                     checked={perms.includes(p.id)}
-                    onChange={() => togglePerm(p.id)}
-                    className="h-4 w-4 rounded"
+                    onCheckedChange={() => togglePerm(p.id)}
                   />
-                  {p.label}
+                  <span>{p.label}</span>
                 </label>
               ))}
             </div>

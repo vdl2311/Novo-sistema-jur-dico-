@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -563,8 +564,8 @@ function MovementModal({
             <Label htmlFor="m-date">Data</Label>
             <Input id="m-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="m-imp" checked={form.important} onChange={(e) => setForm({ ...form, important: e.target.checked })} />
+          <div className="flex items-center gap-2 select-none">
+            <Checkbox id="m-imp" checked={form.important} onCheckedChange={(checked) => setForm({ ...form, important: !!checked })} />
             <Label htmlFor="m-imp" className="text-sm font-normal cursor-pointer">Marcar como importante</Label>
           </div>
         </div>

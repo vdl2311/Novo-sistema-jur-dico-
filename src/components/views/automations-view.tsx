@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Zap, Play, Plus, Mail, MessageSquare, FileText, Bell, Bot, Clock } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -256,15 +257,14 @@ function NewAutomationModal({
                   <label
                     key={a.id}
                     className={cn(
-                      'flex items-center gap-2 p-2 rounded-md border cursor-pointer text-sm transition-colors',
+                      'flex items-center gap-2 p-2 rounded-md border cursor-pointer text-sm transition-colors select-none',
                       selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
                     )}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
+                      id={`act-${a.id}`}
                       checked={selected}
-                      onChange={() => toggleAction(a.id)}
-                      className="h-4 w-4"
+                      onCheckedChange={() => toggleAction(a.id)}
                     />
                     <Icon className="h-3.5 w-3.5" />
                     {a.label}
