@@ -1,8 +1,6 @@
 'use client'
 
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,23 +11,55 @@ import { cn } from '@/lib/utils'
 import { priorityColor, formatDateTime } from '@/lib/format'
 
 export function NotificationsView() {
-  const convexNotifications = useQuery(api.notifications.listByUser, { userId: "user-123" }) // Em um sistema real, usaria o ID do usuário logado
-  const markReadMutation = useMutation(api.notifications.markAsRead)
-  const markAllReadMutation = useMutation(api.notifications.markAllAsRead)
-  
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'todas' | 'naolidas'>('todas')
 
-  const items = convexNotifications || []
-  const loading = convexNotifications === undefined
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications')
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data)
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const markRead = async (id: any) => {
-    await markReadMutation({ id })
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const markRead = async (id: string) => {
+    try {
+      const res = await fetch(`/api/notifications?id=${id}`, {
+        method: 'PATCH'
+      })
+      if (res.ok) {
+        fetchNotifications()
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const markAllRead = async () => {
-    await markAllReadMutation({ userId: "user-123" })
+    try {
+      const res = await fetch('/api/notifications?all=true', {
+        method: 'PATCH'
+      })
+      if (res.ok) {
+        fetchNotifications()
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
+  const items = notifications || []
   const filtered = filter === 'naolidas' ? items.filter((i) => !i.read) : items
   const naoLidas = items.filter((i) => !i.read).length
 
@@ -105,7 +135,7 @@ export function NotificationsView() {
             const Icon = iconFor(n.type)
             const createdAtISO = typeof n.createdAt === 'number' ? new Date(n.createdAt).toISOString() : n.createdAt;
             return (
-              <Card key={n._id} className={cn(!n.read && 'border-l-4 border-l-primary')}>
+              <Card key={n.id} className={cn(!n.read && 'border-l-4 border-l-primary')}>
                 <CardContent className="p-3.5 flex items-start gap-3">
                   <div className={cn('h-9 w-9 rounded-md flex items-center justify-center shrink-0', colorFor(n.type))}>
                     <Icon className="h-4 w-4" />
@@ -120,15 +150,15 @@ export function NotificationsView() {
                         <span className="h-2 w-2 rounded-full bg-primary" />
                       )}
                     </div>
-                    {n.message && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{n.message}</p>
+                    {(n.description || n.message) && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{n.description || n.message}</p>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-1">
                       {formatDateTime(createdAtISO)}
                     </p>
                   </div>
                   {!n.read && (
-                    <Button size="sm" variant="ghost" onClick={() => markRead(n._id)}>
+                    <Button size="sm" variant="ghost" onClick={() => markRead(n.id)}>
                       <CheckCheck className="h-3.5 w-3.5" />
                     </Button>
                   )}

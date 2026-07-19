@@ -1,7 +1,5 @@
 'use client'
 
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,37 +18,47 @@ const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 function iconForTipo(tipo: string) {
-  switch (tipo.toLowerCase()) {
-    case 'audiência': return Gavel
-    case 'prazo': return Clock
-    case 'tarefa': return CheckSquare
-    default: return CalIcon
-  }
+  const t = tipo.toLowerCase()
+  if (t === 'audiência' || t === 'audiencia') return Gavel
+  if (t === 'prazo') return Clock
+  if (t === 'tarefa') return CheckSquare
+  return CalIcon
 }
 
 function colorForTipo(tipo: string) {
-  switch (tipo.toLowerCase()) {
-    case 'audiência': return 'bg-red-500'
-    case 'prazo': return 'bg-amber-500'
-    case 'tarefa': return 'bg-purple-500'
-    default: return 'bg-blue-500'
-  }
+  const t = tipo.toLowerCase()
+  if (t === 'audiência' || t === 'audiencia') return 'bg-red-500'
+  if (t === 'prazo') return 'bg-amber-500'
+  if (t === 'tarefa') return 'bg-purple-500'
+  return 'bg-blue-500'
 }
 
 export function AgendaView({ onOpenProcess }: Props) {
   const [mode, setMode] = useState<ViewMode>('month')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [eventos, setEventos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime()
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getTime()
+  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString()
+  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString()
 
-  const convexEvents = useQuery(api.agenda.list, { 
-    inicio: new Date(startOfMonth).toISOString(), 
-    fim: new Date(endOfMonth).toISOString() 
-  })
-
-  const eventos = convexEvents?.eventos || []
-  const loading = convexEvents === undefined
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/agenda?inicio=${startOfMonth}&fim=${endOfMonth}`)
+        if (res.ok) {
+          const data = await res.json()
+          setEventos(data.eventos || [])
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEvents()
+  }, [currentDate])
 
   const eventosPorDia: Record<string, any[]> = {}
   for (const e of eventos) {

@@ -1,7 +1,5 @@
 'use client'
 
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import {
   Card,
@@ -78,10 +76,21 @@ interface Props {
 }
 
 export function DashboardView({ onOpenProcess, onNavigate }: Props) {
-  const convexData = useQuery(api.dashboard.getStats, { userId: "user-123" })
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const data = convexData as unknown as DashboardData
-  const loading = convexData === undefined
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error(`Failed to fetch: ${r.status}`)
+        }
+        return r.json()
+      })
+      .then(setData)
+      .catch((err) => console.error("Error loading dashboard stats:", err))
+      .finally(() => setLoading(false))
+  }, [])
 
   if (loading || !data) {
     return (

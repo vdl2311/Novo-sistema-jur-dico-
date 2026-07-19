@@ -1,7 +1,5 @@
 'use client'
 
-import { useAction } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,15 +31,24 @@ export function DatajudView() {
   const [cnj, setCnj] = useState('')
   const [loading, setLoading] = useState(false)
   const [resultado, setResultado] = useState<ResultadoDataJud | null>(null)
-  
-  const searchAction = useAction(api.actions.datajudSearch)
 
   const consultar = async (demo: boolean = false) => {
     if (!cnj.trim()) return
     setLoading(true)
     setResultado(null)
     try {
-      const data = await searchAction({ cnj, demo })
+      const response = await fetch('/api/datajud/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ cnj, demo })
+      })
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.error || `HTTP ${response.status}`)
+      }
+      const data = await response.json()
       setResultado(data as any)
     } catch (error: any) {
       setResultado({
@@ -50,7 +57,7 @@ export function DatajudView() {
         tribunal: '?',
         tribunalNome: 'Erro de conexão',
         fonte: 'demo',
-        aviso: `Erro ao consultar Convex Action: ${error.message}`,
+        aviso: `Erro ao consultar: ${error.message}`,
       })
     } finally {
       setLoading(false)

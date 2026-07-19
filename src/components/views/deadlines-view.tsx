@@ -1,7 +1,5 @@
 'use client'
 
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,7 +22,9 @@ interface Deadline {
   priority: string
   responsible: string | null
   done: boolean
+  status?: string
   notes: string | null
+  processId: string | null
   process: { id: string; title: string; client: { name: string } } | null
 }
 
@@ -33,40 +33,54 @@ interface Props {
 }
 
 export function DeadlinesView({ onOpenProcess }: Props) {
-  const convexDeadlines = useQuery(api.deadlines.list)
-  const completeDeadline = useMutation(api.deadlines.complete)
-  
+  const [deadlines, setDeadlines] = useState<Deadline[]>([])
+  const [loading, setLoading] = useState(true)
   const [periodo, setPeriodo] = useState('7dias')
   const { toast } = useToast()
 
-  const items = (convexDeadlines || []).filter(d => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const deadlineDate = new Date(d.dueDate)
-    
-    if (periodo === 'hoje') {
-      return deadlineDate.toDateString() === today.toDateString()
-    }
-    if (periodo === '7dias') {
-      const weekFromNow = new Date()
-      weekFromNow.setDate(today.getDate() + 7)
-      return deadlineDate >= today && deadlineDate <= weekFromNow
-    }
-    if (periodo === 'atrasados') {
-      return deadlineDate < today && d.status !== 'Concluído'
-    }
-    return true
-  })
-
-  const loading = convexDeadlines === undefined
-
-  const toggleDone = async (d: any) => {
-    console.log(`[DeadlinesView:toggleDone] Toggling done status for deadline ID: ${d._id}. Current record:`, d);
+  const fetchDeadlines = async () => {
     try {
-      const result = await completeDeadline({ id: d._id })
-      console.log("[DeadlinesView:toggleDone] Deadline status updated successfully. Result:", result);
+      const res = await fetch(`/api/deadlines?periodo=${periodo}`)
+      if (res.ok) {
+        const data = await res.json()
+        setDeadlines(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDeadlines()
+  }, [periodo])
+
+  const items = deadlines || []
+
+  const toggleDone = async (d: Deadline) => {
+    const isDone = d.done || d.status === 'Concluído'
+    const newDoneState = !isDone
+    console.log(`[DeadlinesView:toggleDone] Toggling done status for deadline ID: ${d.id}. Current: ${isDone}`);
+    
+    // Optimistic UI update
+    setDeadlines(prev => prev.map(item => item.id === d.id ? { ...item, done: newDoneState, status: newDoneState ? 'Concluído' : 'Pendente' } : item))
+
+    try {
+      const res = await fetch(`/api/deadlines?id=${d.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          done: newDoneState,
+          status: newDoneState ? 'Concluído' : 'Pendente'
+        })
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      
       toast({
-        title: 'Prazo concluído',
+        title: newDoneState ? 'Prazo concluído' : 'Prazo reaberto',
         description: d.title,
       })
     } catch (error: any) {
@@ -76,6 +90,7 @@ export function DeadlinesView({ onOpenProcess }: Props) {
         description: error.message || 'Falha ao atualizar prazo.',
         variant: 'destructive',
       })
+      fetchDeadlines() // rollback on error
     }
   }
 
@@ -132,11 +147,12 @@ export function DeadlinesView({ onOpenProcess }: Props) {
                 {grouped[date].map((d: any) => {
                   const deadlineISO = new Date(d.dueDate).toISOString()
                   const dias = daysUntil(deadlineISO)
-                  const isDone = d.status === 'Concluído'
+                  const isDone = d.done || d.status === 'Concluído'
                   const atrasado = dias < 0 && !isDone
+                  const processNumber = d.process?.cnj || d.processNumber
                   return (
                     <Card
-                      key={d._id}
+                      key={d.id}
                       className={cn(atrasado && 'border-red-300 dark:border-red-900/50')}
                     >
                       <CardContent className="p-3.5 flex items-start gap-3">
@@ -154,12 +170,12 @@ export function DeadlinesView({ onOpenProcess }: Props) {
                           <p className={cn('text-sm font-medium', isDone && 'line-through text-muted-foreground')}>
                             {d.title}
                           </p>
-                          {d.processNumber && (
+                          {processNumber && (
                             <button
                               onClick={() => d.processId && onOpenProcess(d.processId)}
                               className="text-[11px] text-muted-foreground hover:text-primary truncate block mt-0.5"
                             >
-                              Proc: {d.processNumber}
+                              Proc: {processNumber}
                             </button>
                           )}
                           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
@@ -168,9 +184,9 @@ export function DeadlinesView({ onOpenProcess }: Props) {
                             </span>
                             
                             <span className={cn(
-                              'text-[10px] font-medium',
-                              atrasado ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-                            )}>
+                               'text-[10px] font-medium',
+                               atrasado ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
+                             )}>
                               • {relativeDate(deadlineISO)}
                             </span>
                           </div>

@@ -1,7 +1,5 @@
 'use client'
 
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -40,13 +38,28 @@ interface Financial {
 }
 
 export function FinancialView() {
-  const convexFinancial = useQuery(api.financial.list)
-  const markAsPaid = useMutation(api.financial.markAsPaid)
+  const [allItems, setAllItems] = useState<Financial[]>([])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('todos')
 
-  const loading = convexFinancial === undefined
-  const allItems = convexFinancial || []
-  
+  const fetchItems = async () => {
+    try {
+      const res = await fetch('/api/financial')
+      if (res.ok) {
+        const data = await res.json()
+        setAllItems(data)
+      }
+    } catch (err) {
+      console.error("Error loading financial items:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchItems()
+  }, [])
+
   const items = allItems.filter(i => {
     if (tab === 'todos') return true
     if (tab === 'receitas') return i.type === 'Receita'
@@ -54,11 +67,25 @@ export function FinancialView() {
     return true
   })
 
-  const markPaid = async (id: any) => {
+  const markPaid = async (id: string) => {
     console.log(`[FinancialView:markPaid] Triggering payment marking for financial transaction ID: ${id}`);
     try {
-      const result = await markAsPaid({ id });
-      console.log("[FinancialView:markPaid] Transaction marked as paid successfully. Result:", result);
+      const res = await fetch(`/api/financial?id=${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'Pago',
+          paidDate: new Date().toISOString(),
+        }),
+      })
+      if (res.ok) {
+        console.log("[FinancialView:markPaid] Transaction marked as paid successfully.");
+        fetchItems()
+      } else {
+        throw new Error(`Failed to update status: ${res.status}`)
+      }
     } catch (error: any) {
       console.error("[FinancialView:markPaid] Error marking transaction as paid:", error);
     }
@@ -177,7 +204,7 @@ export function FinancialView() {
           ) : (
             <ul className="space-y-2">
               {items.map((f: any) => (
-                <Card key={f._id}>
+                <Card key={f.id}>
                   <CardContent className="p-3.5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className={cn(
@@ -190,7 +217,7 @@ export function FinancialView() {
                         <p className="text-sm font-medium truncate">{f.description}</p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                           <span className="text-[10px] text-muted-foreground">{f.category}</span>
-                          {f.clientName && <span className="text-[10px] text-muted-foreground">• {f.clientName}</span>}
+                          {f.client?.name && <span className="text-[10px] text-muted-foreground">• {f.client.name}</span>}
                           <span className="text-[10px] text-muted-foreground">• Venc.: {formatDate(f.dueDate)}</span>
                           {f.paidDate && <span className="text-[10px] text-muted-foreground">• Pago: {formatDate(f.paidDate)}</span>}
                         </div>
@@ -209,7 +236,7 @@ export function FinancialView() {
                         </span>
                       </div>
                       {f.status !== 'Pago' && (
-                        <Button size="sm" variant="outline" onClick={() => markPaid(f._id)} className="hidden md:flex">
+                        <Button size="sm" variant="outline" onClick={() => markPaid(f.id)} className="hidden md:flex">
                           Marcar pago
                         </Button>
                       )}

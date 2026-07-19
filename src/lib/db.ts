@@ -286,6 +286,55 @@ async function resolveRelations(modelName: string, items: any[], include: any): 
       targetModel = 'complianceCheck';
       foreignKey = 'ruleId';
       isMany = true;
+    } else if (relationName === 'movements') {
+      targetModel = 'movement';
+      foreignKey = 'processId';
+      isMany = true;
+    } else if (relationName === 'deadlines') {
+      targetModel = 'deadline';
+      foreignKey = 'processId';
+      isMany = true;
+    } else if (relationName === 'tasks') {
+      targetModel = 'task';
+      foreignKey = 'processId';
+      isMany = true;
+    } else if (relationName === '_count') {
+      const countFields = Object.keys(include._count?.select || {});
+      try {
+        const relationSnapshots: Record<string, any[]> = {};
+        for (const f of countFields) {
+          let col = f;
+          if (f === 'movements') col = 'movement';
+          if (f === 'deadlines') col = 'deadline';
+          if (f === 'tasks') col = 'task';
+          if (f === 'documents') col = 'document';
+          
+          try {
+            const snap = await getDocs(collection(firestore, col));
+            relationSnapshots[f] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          } catch (e) {
+            relationSnapshots[f] = [];
+          }
+        }
+        
+        for (let i = 0; i < resolvedItems.length; i++) {
+          const item = resolvedItems[i];
+          const counts: Record<string, number> = {};
+          
+          for (const f of countFields) {
+            let foreignKeyName = 'processId';
+            if (f === 'documents') foreignKeyName = 'clientId';
+            
+            counts[f] = relationSnapshots[f].filter((t: any) => 
+              t[foreignKeyName] === item.id || t.processId === item.id || t.clientId === item.id
+            ).length;
+          }
+          resolvedItems[i]._count = counts;
+        }
+      } catch (e) {
+        console.error("Erro ao resolver relação _count:", e);
+      }
+      continue;
     }
 
     try {
@@ -296,9 +345,21 @@ async function resolveRelations(modelName: string, items: any[], include: any): 
       for (let i = 0; i < resolvedItems.length; i++) {
         const item = resolvedItems[i];
         if (isMany) {
-          resolvedItems[i][relationName] = targetItems.filter((t: any) => 
+          let related = targetItems.filter((t: any) => 
             t[foreignKey] === item.id || t.processId === item.id || t.clientId === item.id || t.contractId === item.id
           );
+          
+          const relationOptions = include[relationName];
+          if (relationOptions && typeof relationOptions === 'object') {
+            if (relationOptions.orderBy) {
+              related = sortItems(related, relationOptions.orderBy);
+            }
+            if (typeof relationOptions.take === 'number') {
+              related = related.slice(0, relationOptions.take);
+            }
+          }
+          
+          resolvedItems[i][relationName] = related;
         } else {
           const fKeyVal = item[foreignKey];
           resolvedItems[i][relationName] = targetItems.find((t: any) => t.id === fKeyVal) || null;

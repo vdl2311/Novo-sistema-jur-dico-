@@ -1,7 +1,5 @@
 'use client'
 
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -64,19 +62,58 @@ const COLS = [
 ]
 
 export function TasksView({ onOpenProcess }: Props) {
-  const convexTasks = useQuery(api.tasks.list)
-  const convexProcesses = useQuery(api.processes.list)
-  const convexClients = useQuery(api.clients.list)
-  const createTask = useMutation(api.tasks.create)
-  const updateTask = useMutation(api.tasks.update)
-
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [processes, setProcesses] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const { toast } = useToast()
 
-  const items = convexTasks || []
-  const loading = convexTasks === undefined
-  const processes = convexProcesses || []
-  const clients = convexClients || []
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('/api/tasks')
+      if (res.ok) {
+        const data = await res.json()
+        setTasks(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchProcesses = async () => {
+    try {
+      const res = await fetch('/api/processes')
+      if (res.ok) {
+        const data = await res.json()
+        setProcesses(data)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch('/api/clients')
+      if (res.ok) {
+        const data = await res.json()
+        setClients(data)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    fetchTasks()
+    fetchProcesses()
+    fetchClients()
+  }, [])
+
+  const items = tasks || []
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -86,17 +123,26 @@ export function TasksView({ onOpenProcess }: Props) {
     const { active, over } = e
     if (!over) return
     const newStatus = String(over.id)
-    const task = items.find((t: any) => t._id === active.id)
+    const task = items.find((t: any) => t.id === active.id)
     if (!task || task.status === newStatus) return
 
-    console.log(`[TasksView:onDragEnd] Moving task ID: ${task._id} to new status: ${newStatus}`);
+    console.log(`[TasksView:onDragEnd] Moving task ID: ${task.id} to new status: ${newStatus}`);
+    
+    // Update local state optimistically
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
+
     try {
-      const result = await updateTask({ id: task._id as any, status: newStatus })
-      console.log("[TasksView:onDragEnd] Task moved successfully. Result:", result);
+      const res = await fetch(`/api/tasks?id=${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       toast({ title: 'Tarefa movida', description: `${task.title} → ${newStatus}` })
     } catch (error: any) {
       console.error("[TasksView:onDragEnd] Error moving task:", error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' })
+      fetchTasks() // revert state on failure
     }
   }
 
@@ -108,16 +154,23 @@ export function TasksView({ onOpenProcess }: Props) {
         description: data.description || "",
         status: data.status || 'A Fazer',
         priority: data.priority || 'Média',
-        dueDate: data.dueDate ? new Date(data.dueDate).getTime() : undefined,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : undefined,
         assignee: data.assignee || "",
-        processId: data.processId as any,
-        clientId: data.clientId as any,
+        processId: data.processId || null,
+        clientId: data.clientId || null,
       };
       console.log("[TasksView:handleCreate] Dispatching payload:", payload);
-      const result = await createTask(payload);
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const result = await res.json();
       console.log("[TasksView:handleCreate] Task created successfully. Result:", result);
-      toast({ title: 'Tarefa criada no Convex' })
+      toast({ title: 'Tarefa criada' })
       setModalOpen(false)
+      fetchTasks()
     } catch (error: any) {
       console.error("[TasksView:handleCreate] Error occurred during task persistence:", error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' })
@@ -208,7 +261,7 @@ function Column({
 
 function TaskCard({ task, onOpenProcess }: { task: any; onOpenProcess: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task._id,
+    id: task.id,
   })
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 50 }
@@ -354,7 +407,7 @@ function NewTaskModal({
               <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
               <SelectContent>
                 {processes.map((p: any) => (
-                  <SelectItem key={p._id} value={p._id}>{p.title}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
