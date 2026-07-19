@@ -3515,6 +3515,9 @@ async function GET20(req) {
   let cliente = client;
   if (!cliente && token === "demo") {
     cliente = await db.client.findFirst({ where: { status: "Ativo" } });
+    if (!cliente) {
+      cliente = await db.client.findFirst();
+    }
   }
   if (!cliente) {
     return import_server24.NextResponse.json({ error: "Cliente n\xE3o encontrado" }, { status: 404 });

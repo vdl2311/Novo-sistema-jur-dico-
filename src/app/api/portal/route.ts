@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
   let cliente = client
   if (!cliente && token === 'demo') {
     cliente = await db.client.findFirst({ where: { status: 'Ativo' } })
+    if (!cliente) {
+      cliente = await db.client.findFirst() // fallback to any client for demo
+    }
   }
 
   if (!cliente) {
