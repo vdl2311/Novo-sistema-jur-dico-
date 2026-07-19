@@ -31,6 +31,7 @@ import { useTeamInvite } from "@/hooks/use-team-invite"
 
 interface User {
   id: string
+  _id?: string
   name: string
   email: string
   role: string

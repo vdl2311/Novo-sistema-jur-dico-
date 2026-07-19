@@ -39,7 +39,8 @@ var import_server40 = require("next/server");
 var route_exports = {};
 __export(route_exports, {
   GET: () => GET,
-  POST: () => POST
+  POST: () => POST,
+  dynamic: () => dynamic
 });
 var import_server = require("next/server");
 
@@ -805,6 +806,7 @@ var db = new Proxy({}, {
 });
 
 // src/app/api/agents/route.ts
+var dynamic = "force-dynamic";
 async function GET() {
   const agents = await db.agent.findMany({
     include: {
@@ -866,10 +868,12 @@ async function POST(req) {
 var route_exports2 = {};
 __export(route_exports2, {
   GET: () => GET2,
-  POST: () => POST2
+  POST: () => POST2,
+  dynamic: () => dynamic2
 });
 var import_server2 = require("next/server");
 var import_z_ai_web_dev_sdk = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic2 = "force-dynamic";
 async function POST2(req) {
   const body = await req.json();
   const { agentId, task, input, processId, clientId } = body;
@@ -1089,10 +1093,12 @@ async function GET2(req) {
 // src/app/api/ai-peticao/route.ts
 var route_exports3 = {};
 __export(route_exports3, {
-  POST: () => POST3
+  POST: () => POST3,
+  dynamic: () => dynamic3
 });
 var import_server3 = require("next/server");
 var import_z_ai_web_dev_sdk2 = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic3 = "force-dynamic";
 async function POST3(req) {
   const body = await req.json();
   const tipo = body.tipo || "inicial";
@@ -1195,10 +1201,12 @@ Se faltarem dados essenciais, use placeholders entre colchetes [como este] para 
 // src/app/api/ai-revisao/route.ts
 var route_exports4 = {};
 __export(route_exports4, {
-  POST: () => POST4
+  POST: () => POST4,
+  dynamic: () => dynamic4
 });
 var import_server4 = require("next/server");
 var import_z_ai_web_dev_sdk3 = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic4 = "force-dynamic";
 async function POST4(req) {
   const body = await req.json();
   const texto = (body.texto || "").trim();
@@ -1250,9 +1258,11 @@ Responda em portugu\xEAs brasileiro, formato Markdown estruturado.`;
 // src/app/api/reports/route.ts
 var route_exports5 = {};
 __export(route_exports5, {
-  GET: () => GET3
+  GET: () => GET3,
+  dynamic: () => dynamic5
 });
 var import_server5 = require("next/server");
+var dynamic5 = "force-dynamic";
 async function GET3(req) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type") || "processos";
@@ -1463,10 +1473,12 @@ var route_exports6 = {};
 __export(route_exports6, {
   GET: () => GET4,
   POST: () => POST5,
-  PUT: () => PUT
+  PUT: () => PUT,
+  dynamic: () => dynamic6
 });
 var import_server6 = require("next/server");
 var import_z_ai_web_dev_sdk4 = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic6 = "force-dynamic";
 async function GET4(req) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") || "";
@@ -1555,9 +1567,11 @@ ${article.content}`
 var route_exports7 = {};
 __export(route_exports7, {
   GET: () => GET5,
-  POST: () => POST6
+  POST: () => POST6,
+  dynamic: () => dynamic7
 });
 var import_server7 = require("next/server");
+var dynamic7 = "force-dynamic";
 async function GET5() {
   const standards = await db.firmStandard.findMany({
     where: { active: true },
@@ -1582,9 +1596,11 @@ async function POST6(req) {
 var route_exports8 = {};
 __export(route_exports8, {
   GET: () => GET6,
-  PATCH: () => PATCH
+  PATCH: () => PATCH,
+  dynamic: () => dynamic8
 });
 var import_server8 = require("next/server");
+var dynamic8 = "force-dynamic";
 async function GET6(_req, { params }) {
   const { id } = await params;
   const proc = await db.process.findUnique({
@@ -1679,9 +1695,11 @@ async function PATCH(req, { params }) {
 // src/app/api/processes/[id]/movements/route.ts
 var route_exports9 = {};
 __export(route_exports9, {
-  POST: () => POST7
+  POST: () => POST7,
+  dynamic: () => dynamic9
 });
 var import_server9 = require("next/server");
+var dynamic9 = "force-dynamic";
 async function POST7(req, { params }) {
   const { id } = await params;
   const body = await req.json();
@@ -1731,9 +1749,11 @@ async function POST7(req, { params }) {
 var route_exports10 = {};
 __export(route_exports10, {
   GET: () => GET7,
-  POST: () => POST8
+  POST: () => POST8,
+  dynamic: () => dynamic10
 });
 var import_server10 = require("next/server");
+var dynamic10 = "force-dynamic";
 async function GET7(req) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") || "";
@@ -1815,9 +1835,11 @@ async function POST8(req) {
 var route_exports11 = {};
 __export(route_exports11, {
   GET: () => GET8,
-  POST: () => POST9
+  POST: () => POST9,
+  dynamic: () => dynamic11
 });
 var import_server11 = require("next/server");
+var dynamic11 = "force-dynamic";
 async function GET8() {
   const items = await db.timeEntry.findMany({
     include: { process: true, client: true },
@@ -1847,9 +1869,11 @@ __export(route_exports12, {
   GET: () => GET9,
   PATCH: () => PATCH2,
   POST: () => POST10,
-  PUT: () => PUT2
+  PUT: () => PUT2,
+  dynamic: () => dynamic12
 });
 var import_server12 = require("next/server");
+var dynamic12 = "force-dynamic";
 async function GET9() {
   const autos = await db.automation.findMany({ orderBy: { createdAt: "desc" } });
   return import_server12.NextResponse.json(
@@ -1938,10 +1962,12 @@ async function PUT2(req) {
 // src/app/api/copilot/route.ts
 var route_exports13 = {};
 __export(route_exports13, {
-  POST: () => POST11
+  POST: () => POST11,
+  dynamic: () => dynamic13
 });
 var import_server13 = require("next/server");
 var import_z_ai_web_dev_sdk5 = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic13 = "force-dynamic";
 async function POST11(req) {
   const body = await req.json();
   const pergunta = (body.pergunta || "").trim();
@@ -2065,9 +2091,11 @@ ${contexto}`;
 // src/app/api/search/route.ts
 var route_exports14 = {};
 __export(route_exports14, {
-  GET: () => GET10
+  GET: () => GET10,
+  dynamic: () => dynamic14
 });
 var import_server14 = require("next/server");
+var dynamic14 = "force-dynamic";
 async function GET10(req) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim().toLowerCase();
@@ -2176,9 +2204,11 @@ var route_exports15 = {};
 __export(route_exports15, {
   GET: () => GET11,
   PATCH: () => PATCH3,
-  POST: () => POST12
+  POST: () => POST12,
+  dynamic: () => dynamic15
 });
 var import_server15 = require("next/server");
+var dynamic15 = "force-dynamic";
 async function GET11() {
   const notifs = await db.notification.findMany({ orderBy: { createdAt: "desc" }, take: 50 });
   return import_server15.NextResponse.json(notifs);
@@ -2215,9 +2245,11 @@ async function POST12(req) {
 // src/app/api/agenda/route.ts
 var route_exports16 = {};
 __export(route_exports16, {
-  GET: () => GET12
+  GET: () => GET12,
+  dynamic: () => dynamic16
 });
 var import_server16 = require("next/server");
+var dynamic16 = "force-dynamic";
 async function GET12(req) {
   const { searchParams } = new URL(req.url);
   const inicio = searchParams.get("inicio");
@@ -2275,9 +2307,11 @@ async function GET12(req) {
 var route_exports17 = {};
 __export(route_exports17, {
   GET: () => GET13,
-  POST: () => POST13
+  POST: () => POST13,
+  dynamic: () => dynamic17
 });
 var import_server17 = require("next/server");
+var dynamic17 = "force-dynamic";
 async function GET13(req) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") || "";
@@ -2338,10 +2372,12 @@ var route_exports18 = {};
 __export(route_exports18, {
   GET: () => GET14,
   POST: () => POST14,
-  PUT: () => PUT3
+  PUT: () => PUT3,
+  dynamic: () => dynamic18
 });
 var import_server18 = require("next/server");
 var import_z_ai_web_dev_sdk6 = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic18 = "force-dynamic";
 async function GET14(req) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category");
@@ -2489,9 +2525,11 @@ __export(route_exports19, {
   DELETE: () => DELETE,
   GET: () => GET15,
   PATCH: () => PATCH4,
-  POST: () => POST15
+  POST: () => POST15,
+  dynamic: () => dynamic19
 });
 var import_server19 = require("next/server");
+var dynamic19 = "force-dynamic";
 async function GET15(req) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -2556,9 +2594,11 @@ async function DELETE(req) {
 // src/app/api/route.ts
 var route_exports20 = {};
 __export(route_exports20, {
-  GET: () => GET16
+  GET: () => GET16,
+  dynamic: () => dynamic20
 });
 var import_server20 = require("next/server");
+var dynamic20 = "force-dynamic";
 async function GET16() {
   return import_server20.NextResponse.json({ message: "Hello, world!" });
 }
@@ -2567,9 +2607,11 @@ async function GET16() {
 var route_exports21 = {};
 __export(route_exports21, {
   GET: () => GET17,
-  POST: () => POST16
+  POST: () => POST16,
+  dynamic: () => dynamic21
 });
 var import_server21 = require("next/server");
+var dynamic21 = "force-dynamic";
 async function GET17() {
   const templates = await db.contractTemplate.findMany({
     include: { _count: { select: { contracts: true } } },
@@ -2598,9 +2640,11 @@ async function POST16(req) {
 // src/app/api/admin/seed/route.ts
 var route_exports22 = {};
 __export(route_exports22, {
-  GET: () => GET18
+  GET: () => GET18,
+  dynamic: () => dynamic22
 });
 var import_server22 = require("next/server");
+var dynamic22 = "force-dynamic";
 async function GET18() {
   try {
     await db.auditLog.deleteMany();
@@ -3356,9 +3400,11 @@ async function GET18() {
 // src/app/api/admin/route.ts
 var route_exports23 = {};
 __export(route_exports23, {
-  GET: () => GET19
+  GET: () => GET19,
+  dynamic: () => dynamic23
 });
 var import_server23 = require("next/server");
+var dynamic23 = "force-dynamic";
 async function GET19() {
   const [
     totalUsers,
@@ -3454,9 +3500,11 @@ async function GET19() {
 // src/app/api/portal/route.ts
 var route_exports24 = {};
 __export(route_exports24, {
-  GET: () => GET20
+  GET: () => GET20,
+  dynamic: () => dynamic24
 });
 var import_server24 = require("next/server");
+var dynamic24 = "force-dynamic";
 async function GET20(req) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
@@ -3540,9 +3588,11 @@ var route_exports25 = {};
 __export(route_exports25, {
   GET: () => GET21,
   PATCH: () => PATCH5,
-  POST: () => POST17
+  POST: () => POST17,
+  dynamic: () => dynamic25
 });
 var import_server25 = require("next/server");
+var dynamic25 = "force-dynamic";
 async function GET21(req) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -3564,7 +3614,7 @@ async function POST17(req) {
       content = tpl.content;
       if (body.variables) {
         for (const [key, value] of Object.entries(body.variables)) {
-          content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), String(value));
+          content = content.replace(new RegExp(`{{${key}}}`, "g"), String(value));
         }
       }
     }
@@ -3630,9 +3680,11 @@ var route_exports26 = {};
 __export(route_exports26, {
   GET: () => GET22,
   PATCH: () => PATCH6,
-  POST: () => POST18
+  POST: () => POST18,
+  dynamic: () => dynamic26
 });
 var import_server26 = require("next/server");
+var dynamic26 = "force-dynamic";
 async function GET22(req) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
@@ -3694,9 +3746,11 @@ async function PATCH6(req) {
 var route_exports27 = {};
 __export(route_exports27, {
   GET: () => GET23,
-  POST: () => POST19
+  POST: () => POST19,
+  dynamic: () => dynamic27
 });
 var import_server27 = require("next/server");
+var dynamic27 = "force-dynamic";
 async function GET23(req) {
   const { searchParams } = new URL(req.url);
   const area = searchParams.get("area");
@@ -3725,9 +3779,11 @@ var route_exports28 = {};
 __export(route_exports28, {
   GET: () => GET24,
   PATCH: () => PATCH7,
-  POST: () => POST20
+  POST: () => POST20,
+  dynamic: () => dynamic28
 });
 var import_server28 = require("next/server");
+var dynamic28 = "force-dynamic";
 async function GET24(req) {
   const { searchParams } = new URL(req.url);
   const periodo = searchParams.get("periodo") || "todos";
@@ -3815,7 +3871,8 @@ async function PATCH7(req) {
 var route_exports29 = {};
 __export(route_exports29, {
   GET: () => GET25,
-  POST: () => POST21
+  POST: () => POST21,
+  dynamic: () => dynamic29
 });
 var import_server29 = require("next/server");
 
@@ -4066,6 +4123,7 @@ function simularRespostaDataJud(cnj) {
 }
 
 // src/app/api/datajud/search/route.ts
+var dynamic29 = "force-dynamic";
 async function POST21(req) {
   const body = await req.json();
   const cnj = (body.cnj || "").trim();
@@ -4133,9 +4191,11 @@ async function GET25() {
 // src/app/api/datajud/sync/route.ts
 var route_exports30 = {};
 __export(route_exports30, {
-  POST: () => POST22
+  POST: () => POST22,
+  dynamic: () => dynamic30
 });
 var import_server30 = require("next/server");
+var dynamic30 = "force-dynamic";
 async function POST22(req) {
   const body = await req.json();
   const processId = body.processId;
@@ -4264,10 +4324,12 @@ async function POST22(req) {
 // src/app/api/ai-jurisprudencia/route.ts
 var route_exports31 = {};
 __export(route_exports31, {
-  POST: () => POST23
+  POST: () => POST23,
+  dynamic: () => dynamic31
 });
 var import_server31 = require("next/server");
 var import_z_ai_web_dev_sdk7 = __toESM(require("z-ai-web-dev-sdk"), 1);
+var dynamic31 = "force-dynamic";
 async function POST23(req) {
   const body = await req.json();
   const tema = (body.tema || "").trim();
@@ -4319,9 +4381,11 @@ Responda em portugu\xEAs brasileiro, formato Markdown.`;
 // src/app/api/viacep/route.ts
 var route_exports32 = {};
 __export(route_exports32, {
-  GET: () => GET26
+  GET: () => GET26,
+  dynamic: () => dynamic32
 });
 var import_server32 = require("next/server");
+var dynamic32 = "force-dynamic";
 async function GET26(req) {
   const { searchParams } = new URL(req.url);
   const cep = (searchParams.get("cep") || "").replace(/\D/g, "");
@@ -4359,9 +4423,11 @@ async function GET26(req) {
 // src/app/api/dashboard/route.ts
 var route_exports33 = {};
 __export(route_exports33, {
-  GET: () => GET27
+  GET: () => GET27,
+  dynamic: () => dynamic33
 });
 var import_server33 = require("next/server");
+var dynamic33 = "force-dynamic";
 async function safeQuery(promise, fallback) {
   try {
     return await promise;
@@ -4557,9 +4623,11 @@ async function GET27() {
 var route_exports34 = {};
 __export(route_exports34, {
   GET: () => GET28,
-  POST: () => POST24
+  POST: () => POST24,
+  dynamic: () => dynamic34
 });
 var import_server34 = require("next/server");
+var dynamic34 = "force-dynamic";
 var CRON_SECRET = process.env.CRON_SECRET || "jusflow-cron-secret-2026";
 async function POST24(req) {
   const authHeader = req.headers.get("authorization");
@@ -4762,9 +4830,11 @@ async function GET28() {
 var route_exports35 = {};
 __export(route_exports35, {
   GET: () => GET29,
-  POST: () => POST25
+  POST: () => POST25,
+  dynamic: () => dynamic35
 });
 var import_server35 = require("next/server");
+var dynamic35 = "force-dynamic";
 async function POST25(req) {
   const body = await req.json();
   const searchText = (body.searchText || "").toLowerCase().trim();
@@ -4850,9 +4920,11 @@ async function GET29() {
 // src/app/api/audit/route.ts
 var route_exports36 = {};
 __export(route_exports36, {
-  GET: () => GET30
+  GET: () => GET30,
+  dynamic: () => dynamic36
 });
 var import_server36 = require("next/server");
+var dynamic36 = "force-dynamic";
 async function GET30() {
   const logs = await db.auditLog.findMany({
     orderBy: { createdAt: "desc" },
@@ -4867,7 +4939,8 @@ __export(route_exports37, {
   DELETE: () => DELETE2,
   GET: () => GET31,
   PATCH: () => PATCH8,
-  POST: () => POST26
+  POST: () => POST26,
+  dynamic: () => dynamic37
 });
 var import_server37 = require("next/server");
 
@@ -4924,6 +4997,7 @@ var isFirebaseAdminAvailable = isAvailable;
 var adminAuth = adminAuthInstance;
 
 // src/app/api/team/route.ts
+var dynamic37 = "force-dynamic";
 async function GET31() {
   const users = await db.user.findMany({
     select: {
@@ -5081,9 +5155,11 @@ async function DELETE2(req) {
 var route_exports38 = {};
 __export(route_exports38, {
   GET: () => GET32,
-  POST: () => POST27
+  POST: () => POST27,
+  dynamic: () => dynamic38
 });
 var import_server38 = require("next/server");
+var dynamic38 = "force-dynamic";
 async function GET32(req) {
   const { searchParams } = new URL(req.url);
   const clienteId = searchParams.get("clienteId");
@@ -5138,9 +5214,11 @@ async function POST27(req) {
 // src/app/api/auth/login/route.ts
 var route_exports39 = {};
 __export(route_exports39, {
-  POST: () => POST28
+  POST: () => POST28,
+  dynamic: () => dynamic39
 });
 var import_server39 = require("next/server");
+var dynamic39 = "force-dynamic";
 async function POST28(req) {
   const { email, password, twoFactorCode } = await req.json();
   let user = await db.user.findUnique({ where: { email } });

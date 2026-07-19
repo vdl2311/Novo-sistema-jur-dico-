@@ -20,6 +20,7 @@ interface PortalData {
     aPagar: number
     contratos: number
   }
+  error?: string
 }
 
 export function PortalView() {
@@ -43,8 +44,8 @@ export function PortalView() {
     )
   }
 
-  if (!data) {
-    return <div className="p-12 text-center text-sm text-muted-foreground">Erro ao carregar portal.</div>
+  if (!data || data.error || !data.cliente) {
+    return <div className="p-12 text-center text-sm text-muted-foreground">{data?.error || 'Erro ao carregar portal.'}</div>
   }
 
   return (

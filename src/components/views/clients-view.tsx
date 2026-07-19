@@ -31,6 +31,7 @@ import { applyMask, onlyDigits, isValidCPF, isValidCNPJ, isValidEmail } from '@/
 
 interface Client {
   id: string
+  _id?: string
   name: string
   type: string
   document: string | null
