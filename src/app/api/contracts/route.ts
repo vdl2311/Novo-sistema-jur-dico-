@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       // Substituir variáveis fornecidas
       if (body.variables) {
         for (const [key, value] of Object.entries(body.variables)) {
-          content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value))
+          content = content.replace(new RegExp(`\{\{${key}\}\}`, 'g'), String(value))
         }
       }
     }

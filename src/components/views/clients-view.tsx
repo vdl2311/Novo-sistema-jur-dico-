@@ -1,7 +1,5 @@
 'use client'
 
-import { useQuery, useMutation } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -54,36 +52,47 @@ interface Props {
 }
 
 export function ClientsView({ selectedId }: Props) {
-  const convexClients = useQuery(api.clients.list)
-  const createClient = useMutation(api.clients.create)
-  const updateClient = useMutation(api.clients.update)
-  
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('Todos')
   const [modalOpen, setModalOpen] = useState(false)
   const [selected, setSelected] = useState<any | null>(null)
   const { toast } = useToast()
 
-  const items = (convexClients || []).filter(c => {
-    const matchesSearch = !search || 
-      c.name.toLowerCase().includes(search.toLowerCase()) || 
-      c.document.includes(search) || 
-      c.email.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = status === 'Todos' || c.status === status
-    return matchesSearch && matchesStatus
-  })
-
-  const loading = convexClients === undefined
+  const loadClients = async () => {
+    setLoading(true)
+    try {
+      const q = new URLSearchParams()
+      if (search) q.set('search', search)
+      if (status && status !== 'Todos') q.set('status', status)
+      
+      const res = await fetch(`/api/clients?${q.toString()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setClients(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    if (selectedId && convexClients) {
-      const sel = convexClients.find((c: any) => c._id === selectedId)
+    loadClients()
+  }, [search, status])
+
+  const items = clients
+
+  useEffect(() => {
+    if (selectedId && clients.length > 0) {
+      const sel = clients.find((c: any) => c.id === selectedId || c._id === selectedId)
       if (sel) setSelected(sel)
     }
-  }, [selectedId, convexClients])
+  }, [selectedId, clients])
 
   const handleCreate = async (data: any) => {
-    console.log("[ClientsView:handleCreate] Initiating client submission to Convex/Firestore API. Raw data:", data);
     try {
       const payload = {
         name: data.name,
@@ -100,13 +109,20 @@ export function ClientsView({ selectedId }: Props) {
         tags: data.tags ? data.tags.split(',').map((t: string) => t.trim()) : [],
         notes: data.notes || "",
       };
-      console.log("[ClientsView:handleCreate] Dispatching payload:", payload);
-      const result = await createClient(payload);
-      console.log("[ClientsView:handleCreate] Client created successfully. Result:", result);
-      toast({ title: 'Cliente cadastrado', description: 'Cliente criado com sucesso no Convex.' });
+      
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) throw new Error('Falha ao cadastrar cliente')
+
+      toast({ title: 'Cliente cadastrado', description: 'Cliente criado com sucesso.' });
       setModalOpen(false);
+      loadClients();
     } catch (error: any) {
-      console.error("[ClientsView:handleCreate] Error occurred during client persistence:", error);
+      console.error(error);
       toast({ title: 'Erro', description: error.message || 'Falha ao cadastrar cliente.', variant: 'destructive' });
     }
   }
@@ -151,7 +167,7 @@ export function ClientsView({ selectedId }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {items.map((c) => (
             <Card
-              key={c._id}
+              key={c.id || c._id}
               className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
               onClick={() => setSelected(c)}
             >
@@ -178,9 +194,9 @@ export function ClientsView({ selectedId }: Props) {
                 </div>
 
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground pt-2 border-t border-border">
-                  <span>0 proc.</span>
-                  <span>0 tarefas</span>
-                  <span>0 fin.</span>
+                  <span>{c._count?.processes || 0} proc.</span>
+                  <span>{c._count?.tasks || 0} tarefas</span>
+                  <span>{c._count?.financials || 0} fin.</span>
                 </div>
               </CardContent>
             </Card>
@@ -244,9 +260,9 @@ function ClientDetailModal({ client, onOpenChange }: { client: any | null; onOpe
             </div>
           )}
           <div className="flex gap-3 pt-2 border-t border-border text-sm">
-            <div><strong>0</strong> processos</div>
-            <div><strong>0</strong> tarefas</div>
-            <div><strong>0</strong> financeiros</div>
+            <div><strong>{client._count?.processes || 0}</strong> processos</div>
+            <div><strong>{client._count?.tasks || 0}</strong> tarefas</div>
+            <div><strong>{client._count?.financials || 0}</strong> financeiros</div>
           </div>
         </div>
       </DialogContent>

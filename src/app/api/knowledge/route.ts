@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
@@ -76,7 +77,10 @@ export async function PUT(req: NextRequest) {
       messages: [
         {
           role: 'assistant',
-          content: `Você é um especialista jurídico. Resuma o seguinte artigo em no máximo 200 caracteres, destacando os pontos principais e a tese central. Seja direto e técnico.\n\nARTIGO:\n${article.content}`,
+          content: `Você é um especialista jurídico. Resuma o seguinte artigo em no máximo 200 caracteres, destacando os pontos principais e a tese central. Seja direto e técnico.
+
+ARTIGO:
+${article.content}`,
         },
         { role: 'user', content: 'Gere o resumo.' },
       ],

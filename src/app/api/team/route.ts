@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { adminAuth, isFirebaseAdminAvailable } from '@/lib/firebase-admin'
@@ -175,4 +176,3 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: `Erro no servidor ao deletar usuário: ${err.message || err}` }, { status: 500 })
   }
 }
-

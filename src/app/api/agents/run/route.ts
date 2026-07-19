@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import ZAI from 'z-ai-web-dev-sdk'
@@ -49,11 +50,24 @@ export async function POST(req: NextRequest) {
         include: { client: true, movements: { orderBy: { date: 'desc' }, take: 5 } },
       })
       if (proc) {
-        contextInfo = `\n\nDADOS DO PROCESSO:\n- Título: ${proc.title}\n- CNJ: ${proc.cnj || '-'}\n- Área: ${proc.area}\n- Cliente: ${proc.client.name}\n- Status: ${proc.status}\n- Últimos andamentos:\n${proc.movements.map((m) => `  • ${m.description}`).join('\n')}\n`
+        contextInfo = `
+
+DADOS DO PROCESSO:
+- Título: ${proc.title}
+- CNJ: ${proc.cnj || '-'}
+- Área: ${proc.area}
+- Cliente: ${proc.client.name}
+- Status: ${proc.status}
+- Últimos andamentos:
+${proc.movements.map((m) => `  • ${m.description}`).join('\n')}
+`
       }
     }
 
-    const userMessage = `${task}${contextInfo}${input ? `\n\nPARÂMETROS ADICIONAIS:\n${JSON.stringify(input, null, 2)}` : ''}`
+    const userMessage = `${task}${contextInfo}${input ? `
+
+PARÂMETROS ADICIONAIS:
+${JSON.stringify(input, null, 2)}` : ''}`
 
     const completion = await zai.chat.completions.create({
       messages: [
